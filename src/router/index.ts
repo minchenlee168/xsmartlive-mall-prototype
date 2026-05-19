@@ -12,7 +12,7 @@ import ForgotPasswordPage from '../views/ForgotPasswordPage.vue'
 import InfoPage from '../views/InfoPage.vue'
 
 export default createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: HomePage },
     { path: '/category/:tab', component: CategoryPage },
