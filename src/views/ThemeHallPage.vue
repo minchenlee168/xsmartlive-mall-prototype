@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
 import ThemeBanner from '../components/ThemeBanner.vue'
+import FlashSaleBar from '../components/FlashSaleBar.vue'
 import ProductCard from '../components/ProductCard.vue'
 import { useViewportStore } from '../stores/viewport'
 import { products } from '../data/products'
 
 const router = useRouter()
+const route = useRoute()
+// 由 query.type 決定主題館 header 類型（flash = 限時搶購 bar，其餘 = 主題 Banner）
+const isFlash = computed(() => route.query.type === 'flash')
+const hallTitle = '秋冬童裝主題館'
 
 const vp = computed(() => useViewportStore().current.id)
 const gridCols = computed(() => ({
@@ -65,16 +70,18 @@ onBeforeUnmount(() => observer?.disconnect())
             <i class="pi pi-home text-xs" />
           </button>
           <i class="pi pi-chevron-right text-[0.625rem] text-[#94a3b8]" />
-          <span style="color: var(--primary)" class="font-medium">秋冬童裝主題館</span>
+          <span style="color: var(--primary)" class="font-medium">{{ hallTitle }}</span>
         </nav>
 
         <!-- Title -->
         <div class="flex items-center gap-2">
           <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-          <h1 class="text-lg font-bold text-[#334155]">秋冬童裝主題館</h1>
+          <h1 class="text-lg font-bold text-[#334155]">{{ hallTitle }}</h1>
         </div>
 
-        <ThemeBanner name="秋冬童裝主題館" />
+        <!-- Header：限時搶購用紅色倒數 bar，其餘用主題 Banner -->
+        <FlashSaleBar v-if="isFlash" />
+        <ThemeBanner v-else name="秋冬童裝主題館" />
 
         <div class="flex flex-col gap-4">
           <div class="grid gap-3" :class="gridCols">
@@ -88,6 +95,7 @@ onBeforeUnmount(() => observer?.disconnect())
               :has-variant="p.hasVariant"
               :stock="p.stock"
               :image="p.image"
+              from="theme"
             />
           </div>
 

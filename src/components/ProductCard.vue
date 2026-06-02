@@ -15,6 +15,8 @@ const props = defineProps<{
   hideActions?: boolean
   /** 簡易版：不顯示數量選擇器與「還剩X件」，仍保留 CTA 按鈕 */
   simple?: boolean
+  /** 來源標記（如 'theme'）— 帶進商品頁 query，供麵包屑顯示「返回」 */
+  from?: string
 }>()
 
 const router = useRouter()
@@ -24,10 +26,14 @@ const qty = ref(1)
 const vp = computed(() => useViewportStore().current.id)
 const isPC = computed(() => vp.value === 'pc')
 
+function goDetail() {
+  router.push({ path: `/product/${props.id}`, query: props.from ? { from: props.from } : {} })
+}
+
 function onPrimaryAction(e: MouseEvent) {
   e.stopPropagation()
   if (props.hasVariant) {
-    router.push(`/product/${props.id}`)
+    goDetail()
   } else {
     cart.addItem({ id: props.id, name: props.name, price: props.price, original: props.original, image: props.image }, '預設', qty.value)
   }
@@ -38,7 +44,7 @@ function onPrimaryAction(e: MouseEvent) {
   <div
     class="bg-white rounded-[12px] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.06)] flex flex-col w-full cursor-pointer hover:shadow-md transition-shadow"
     :class="isPC ? 'gap-[0.4375rem] p-[0.5rem]' : 'gap-[0.3125rem] p-[0.5rem]'"
-    @click="router.push(`/product/${props.id}`)"
+    @click="goDetail"
   >
     <!-- Product image -->
     <div class="aspect-[332/320] w-full bg-gray-100 overflow-hidden" :class="isPC ? 'rounded-[8px]' : 'rounded-[6px]'">

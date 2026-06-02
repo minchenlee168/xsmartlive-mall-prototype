@@ -27,10 +27,9 @@ const router = useRouter()
           <div class="flex items-center gap-2">
             <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
               <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-              <h2 class="text-lg font-bold text-[#334155] group-hover:underline">秋冬童裝主題館</h2>
+              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
             </button>
-            <Tag value="輪播圖" severity="info" />
-            <Tag value="精簡商品卡" severity="secondary" />
+            <span class="text-xs text-[#94a3b8]">（主題館類型：輪播圖,精簡商品卡）</span>
           </div>
           <ThemeHallCarousel />
         </section>
@@ -40,10 +39,9 @@ const router = useRouter()
           <div class="flex items-center gap-2">
             <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
               <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-              <h2 class="text-lg font-bold text-[#334155] group-hover:underline">秋冬童裝主題館</h2>
+              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
             </button>
-            <Tag value="限時搶購" severity="info" />
-            <Tag value="標準商品卡" severity="secondary" />
+            <span class="text-xs text-[#94a3b8]">（主題館類型：限時搶購,標準商品卡）</span>
           </div>
           <ThemeHallFlashSale />
         </section>
@@ -53,9 +51,9 @@ const router = useRouter()
           <div class="flex items-center gap-2">
             <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
               <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-              <h2 class="text-lg font-bold text-[#334155] group-hover:underline">秋冬童裝主題館</h2>
+              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
             </button>
-            <Tag value="標準商品卡" severity="secondary" />
+            <span class="text-xs text-[#94a3b8]">（主題館類型：標準,標準商品卡）</span>
           </div>
           <ThemeBanner name="秋冬童裝主題館" />
           <ProductGrid />
@@ -66,9 +64,9 @@ const router = useRouter()
           <div class="flex items-center gap-2">
             <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
               <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-              <h2 class="text-lg font-bold text-[#334155] group-hover:underline">秋冬童裝主題館</h2>
+              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
             </button>
-            <Tag value="精簡商品卡" severity="secondary" />
+            <span class="text-xs text-[#94a3b8]">（主題館類型：標準,精簡商品卡）</span>
           </div>
           <ThemeBanner name="秋冬童裝主題館" />
           <ProductGrid simple />

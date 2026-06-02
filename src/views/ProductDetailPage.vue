@@ -16,6 +16,7 @@ const vp = computed(() => useViewportStore().current.id)
 const isPC = computed(() => vp.value === 'pc')
 const isMobile = computed(() => vp.value === 'mobile')
 
+const fromTheme = computed(() => route.query.from === 'theme')
 const product = computed(() => products.find(p => p.id === Number(route.params.id)) ?? products[0])
 const selectedSize = ref(product.value.sizes?.[0] ?? '')
 const qty = ref(1)
@@ -56,8 +57,15 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
             <i class="pi pi-home text-xs" />
           </button>
           <i class="pi pi-chevron-right text-[10px] text-[#94a3b8]" />
+          <!-- 從主題館進來：中間段顯示「返回」回上一頁 -->
           <button
-            v-if="product.category"
+            v-if="fromTheme"
+            style="color: var(--primary)"
+            class="font-medium hover:underline"
+            @click="router.back()"
+          >返回</button>
+          <button
+            v-else-if="product.category"
             style="color: var(--primary)"
             class="font-medium hover:underline"
             @click="router.push(`/category/${encodeURIComponent(product.category!)}`)"
