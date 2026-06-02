@@ -42,7 +42,7 @@ function onPrimaryAction(e: MouseEvent) {
 
 <template>
   <div
-    class="bg-white rounded-[12px] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.06)] flex flex-col w-full cursor-pointer hover:shadow-md transition-shadow"
+    class="bg-white rounded-[12px] shadow-[0px_1px_3px_rgba(0,0,0,0.1),0px_1px_2px_rgba(0,0,0,0.06)] flex flex-col w-full h-full cursor-pointer hover:shadow-md transition-shadow"
     :class="isPC ? 'gap-[0.4375rem] p-[0.5rem]' : 'gap-[0.3125rem] p-[0.5rem]'"
     @click="goDetail"
   >

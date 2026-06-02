@@ -5,9 +5,8 @@ import CategoryTabs from '../components/CategoryTabs.vue'
 import BannerCarousel from '../components/BannerCarousel.vue'
 import AnnouncementSection from '../components/AnnouncementSection.vue'
 import ThemeBanner from '../components/ThemeBanner.vue'
-import ProductGrid from '../components/ProductGrid.vue'
-import ThemeHallCarousel from '../components/ThemeHallCarousel.vue'
-import ThemeHallFlashSale from '../components/ThemeHallFlashSale.vue'
+import FlashSaleBar from '../components/FlashSaleBar.vue'
+import ThemeHallProducts from '../components/ThemeHallProducts.vue'
 
 const router = useRouter()
 </script>
@@ -22,54 +21,100 @@ const router = useRouter()
         <BannerCarousel />
         <AnnouncementSection />
 
-        <!-- 主題館展示方式 1：輪播 -->
+        <!-- 主題館類型 1：標準（Banner） -->
         <section class="flex flex-col gap-3">
           <div class="flex items-center gap-2">
             <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
               <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
               <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
             </button>
-            <span class="text-xs text-[#94a3b8]">（主題館類型：輪播圖,精簡商品卡）</span>
-          </div>
-          <ThemeHallCarousel />
-        </section>
-
-        <!-- 主題館展示方式 2：限時搶購 -->
-        <section class="flex flex-col gap-3">
-          <div class="flex items-center gap-2">
-            <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
-              <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
-            </button>
-            <span class="text-xs text-[#94a3b8]">（主題館類型：限時搶購,標準商品卡）</span>
-          </div>
-          <ThemeHallFlashSale />
-        </section>
-
-        <!-- 主題館展示方式 3：主題 banner -->
-        <section class="flex flex-col gap-3">
-          <div class="flex items-center gap-2">
-            <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
-              <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
-              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
-            </button>
-            <span class="text-xs text-[#94a3b8]">（主題館類型：標準,標準商品卡）</span>
+            <span class="text-xs text-[#94a3b8]">（主題館類型：標準・標準商品卡）</span>
           </div>
           <ThemeBanner name="秋冬童裝主題館" />
-          <ProductGrid />
+          <ThemeHallProducts />
+          <div class="flex justify-center">
+            <Button
+              label="查看更多"
+              icon="pi pi-angle-down"
+              icon-pos="right"
+              outlined
+              rounded
+              class="w-full max-w-[22.5rem]"
+              @click="router.push('/theme')"
+            />
+          </div>
         </section>
 
-        <!-- 主題館展示方式 4：主題 banner（簡易版商品卡） -->
+        <!-- 主題館類型 1b：標準（精簡商品卡） -->
         <section class="flex flex-col gap-3">
           <div class="flex items-center gap-2">
             <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme')">
               <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
               <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
             </button>
-            <span class="text-xs text-[#94a3b8]">（主題館類型：標準,精簡商品卡）</span>
+            <span class="text-xs text-[#94a3b8]">（主題館類型：標準・精簡商品卡・自動輪播）</span>
           </div>
           <ThemeBanner name="秋冬童裝主題館" />
-          <ProductGrid simple />
+          <ThemeHallProducts simple autoplay />
+          <div class="flex justify-center">
+            <Button
+              label="查看更多"
+              icon="pi pi-angle-down"
+              icon-pos="right"
+              outlined
+              rounded
+              class="w-full max-w-[22.5rem]"
+              @click="router.push('/theme')"
+            />
+          </div>
+        </section>
+
+        <!-- 主題館類型 2：限時搶購（倒數 bar） -->
+        <section class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme?type=flash')">
+              <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
+              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
+            </button>
+            <span class="text-xs text-[#94a3b8]">（主題館類型：限時搶購・標準商品卡）</span>
+          </div>
+          <FlashSaleBar />
+          <ThemeHallProducts />
+          <div class="flex justify-center">
+            <Button
+              label="查看更多"
+              icon="pi pi-angle-down"
+              icon-pos="right"
+              outlined
+              rounded
+              class="w-full max-w-[22.5rem]"
+              @click="router.push('/theme?type=flash')"
+            />
+          </div>
+        </section>
+
+        <!-- 主題館類型 2b：限時搶購（精簡商品卡） -->
+        <section class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <button class="flex items-center gap-2 group cursor-pointer" @click="router.push('/theme?type=flash')">
+              <span class="w-1 h-5 rounded-full" style="background: var(--primary)" />
+              <h2 class="text-lg font-bold text-[#334155] transition-colors group-hover:text-[color:var(--primary)]">秋冬童裝主題館</h2>
+            </button>
+            <span class="text-xs text-[#94a3b8]">（主題館類型：限時搶購・精簡商品卡・自動輪播）</span>
+          </div>
+          <FlashSaleBar />
+          <ThemeHallProducts simple autoplay />
+          <div class="flex justify-center">
+            <Button
+              label="查看更多"
+              icon="pi pi-angle-down"
+              icon-pos="right"
+              outlined
+              rounded
+              class="w-full max-w-[22.5rem]"
+              @click="router.push('/theme?type=flash')"
+            />
+          </div>
         </section>
       </div>
     </main>

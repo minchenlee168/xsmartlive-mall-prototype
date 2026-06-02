@@ -13,5 +13,9 @@ export const useUiStore = defineStore('ui', () => {
     timer = setTimeout(() => { toastVisible.value = false }, 2500)
   }
 
-  return { toastVisible, toastMessage, toast }
+  // 換頁 loading 狀態（由 router 導航守衛切換）
+  const routeLoading = ref(false)
+  function setRouteLoading(v: boolean) { routeLoading.value = v }
+
+  return { toastVisible, toastMessage, toast, routeLoading, setRouteLoading }
 })

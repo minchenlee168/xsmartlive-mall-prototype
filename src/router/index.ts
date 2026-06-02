@@ -11,8 +11,9 @@ import MemberCenterPage from '../views/MemberCenterPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import ForgotPasswordPage from '../views/ForgotPasswordPage.vue'
 import InfoPage from '../views/InfoPage.vue'
+import { useUiStore } from '../stores/ui'
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: HomePage },
@@ -30,4 +31,23 @@ export default createRouter({
     { path: '/privacy', component: InfoPage },
     { path: '/help', component: InfoPage },
   ],
+  scrollBehavior() {
+    return { top: 0 }
+  },
 })
+
+// 換頁 loading：切換路徑時顯示載入畫面，最少顯示一小段時間才看得到
+let loadingTimer: ReturnType<typeof setTimeout> | null = null
+router.beforeEach((to, from) => {
+  if (to.path !== from.path) {
+    if (loadingTimer) clearTimeout(loadingTimer)
+    useUiStore().setRouteLoading(true)
+  }
+  return true
+})
+router.afterEach(() => {
+  if (loadingTimer) clearTimeout(loadingTimer)
+  loadingTimer = setTimeout(() => useUiStore().setRouteLoading(false), 500)
+})
+
+export default router

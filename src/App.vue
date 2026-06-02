@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterView } from 'vue-router'
 import FloatingControls from './components/FloatingControls.vue'
+import PageLoading from './components/PageLoading.vue'
 import { useViewportStore } from './stores/viewport'
 import { useUiStore } from './stores/ui'
 
@@ -40,6 +41,9 @@ const isConstrained = computed(() => !!viewportStore.current.width)
   </div>
 
   <FloatingControls />
+
+  <!-- 換頁 loading 遮罩 -->
+  <PageLoading />
 
   <!-- PrimeVue 全域 Toast -->
   <Toast />
