@@ -120,30 +120,30 @@ watch(isMobile, () => {
       class="absolute top-full left-0 w-full bg-white border-b border-[#e2e8f0] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] z-50 p-4 flex flex-col gap-3"
     >
       <div class="grid grid-cols-3 gap-2">
-        <button
+        <Button
           v-for="item in drawerItems"
           :key="item"
-          class="flex items-center justify-center px-3 py-[9px] rounded-full border text-sm font-medium transition-colors"
-          :class="active === item
-            ? 'text-white'
-            : 'border-[#e2e8f0] text-[#334155] hover:bg-gray-50'"
-          :style="active === item ? 'background: var(--primary-bg); border-color: var(--primary)' : ''"
+          :label="item"
+          size="small"
+          rounded
+          class="w-full"
+          :outlined="active !== item"
+          :severity="active === item ? undefined : 'secondary'"
           @click="navigate(item)"
-        >
-          {{ item }}
-        </button>
+        />
       </div>
 
       <!-- 查看更多 — reveals the remaining main categories -->
       <div v-if="canShowMore" class="flex justify-center">
-        <button
-          class="flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-colors"
-          style="border-color: var(--primary-200); color: var(--primary)"
+        <Button
+          label="查看更多"
+          icon="pi pi-angle-down"
+          icon-pos="right"
+          size="small"
+          rounded
+          outlined
           @click="showAllInDrawer = true"
-        >
-          查看更多
-          <i class="pi pi-angle-down text-xs" />
-        </button>
+        />
       </div>
     </div>
   </div>

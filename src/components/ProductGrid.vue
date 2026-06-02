@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import ProductCard from './ProductCard.vue'
 import { useViewportStore } from '../stores/viewport'
 import { products } from '../data/products'
+
+defineProps<{
+  /** 簡易版商品卡：不顯示數量選擇器與「還剩X件」 */
+  simple?: boolean
+}>()
+
+const router = useRouter()
 
 const vp = computed(() => useViewportStore().current.id)
 const gridCols = computed(() => ({
@@ -11,7 +19,9 @@ const gridCols = computed(() => ({
   'grid-cols-5': vp.value === 'pc',
 }))
 
-const displayProducts = products.slice(0, 10)
+const MAX_DISPLAY = 10
+const displayProducts = products.slice(0, MAX_DISPLAY)
+const hasMore = products.length > MAX_DISPLAY
 </script>
 
 <template>
@@ -27,12 +37,21 @@ const displayProducts = products.slice(0, 10)
         :has-variant="p.hasVariant"
         :stock="p.stock"
         :image="p.image"
+        :simple="simple"
       />
     </div>
 
-    <!-- Loading spinner -->
-    <div class="flex items-center justify-center h-[100px] @lg:h-[235px]">
-      <div class="w-10 h-10 @lg:w-12 @lg:h-12 rounded-full animate-spin" style="border: 4px solid var(--primary-200); border-top-color: var(--primary)" />
+    <!-- 查看更多 — shown when there are more than 10 theme-hall products -->
+    <div v-if="hasMore" class="flex justify-center">
+      <Button
+        label="查看更多"
+        icon="pi pi-angle-down"
+        icon-pos="right"
+        outlined
+        rounded
+        class="w-full max-w-[22.5rem]"
+        @click="router.push('/theme')"
+      />
     </div>
   </div>
 </template>

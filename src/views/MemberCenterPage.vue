@@ -271,9 +271,6 @@ function claimCoupon(c: ClaimableCoupon) {
 const pwCurrent = ref('')
 const pwNew = ref('')
 const pwConfirm = ref('')
-const pwCurrentVisible = ref(false)
-const pwNewVisible = ref(false)
-const pwConfirmVisible = ref(false)
 const PW_RE = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,20}$/
 const pwNewValid = computed(() => PW_RE.test(pwNew.value))
 const pwMismatch = computed(() => !!pwConfirm.value && pwNew.value !== pwConfirm.value)
@@ -302,6 +299,7 @@ const form = reactive({
   chain: '7-11' as '7-11' | 'FamilyMart',
   storeName: '',
 })
+const phoneCodes = ['+886', '+852']
 const cities = ['台北市', '新北市', '桃園市', '台中市', '高雄市']
 const districtMap: Record<string, string[]> = {
   台北市: ['信義區', '大安區', '中山區', '內湖區'],
@@ -394,10 +392,7 @@ function saveAddr() {
           <div class="min-w-0">
             <p class="text-lg font-bold text-[#020617]">{{ name }}</p>
             <p class="text-xs text-[#64748b]">{{ memberId }}</p>
-            <button class="mt-1 flex items-center gap-1.5 text-sm" style="color: var(--primary)" @click="editProfile">
-              編輯個人檔案
-              <i class="pi pi-pencil text-xs" />
-            </button>
+            <Button label="編輯個人檔案" icon="pi pi-pencil" icon-pos="right" link size="small" class="mt-1 !p-0" @click="editProfile" />
           </div>
         </div>
 
@@ -409,12 +404,7 @@ function saveAddr() {
             <div class="flex items-center gap-2">
               <MemberIcon name="points" :size="20" class="shrink-0" />
               <span class="font-medium text-[#334155]">紅利點數</span>
-              <button
-                class="ml-auto @4xl:ml-1 w-7 h-7 rounded-md border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
-                @click="activeNav = 'points'"
-              >
-                <i class="pi pi-chevron-right text-[#64748b] text-sm" />
-              </button>
+              <Button icon="pi pi-chevron-right" severity="secondary" outlined size="small" class="ml-auto @4xl:ml-1" @click="activeNav = 'points'" />
             </div>
             <p class="text-sm text-[#334155]">目前剩餘點數：<span style="color: #f59e0b" class="font-medium">{{ auth.rewardPoints.toFixed(2) }}</span></p>
           </div>
@@ -427,12 +417,7 @@ function saveAddr() {
             <div class="flex items-center gap-2">
               <MemberIcon name="coupon" :size="20" class="shrink-0" />
               <span class="font-medium text-[#334155]">優惠券</span>
-              <button
-                class="ml-auto @4xl:ml-1 w-7 h-7 rounded-md border border-[#e2e8f0] bg-white flex items-center justify-center hover:bg-gray-50 transition-colors"
-                @click="activeNav = 'coupons'"
-              >
-                <i class="pi pi-chevron-right text-[#64748b] text-sm" />
-              </button>
+              <Button icon="pi pi-chevron-right" severity="secondary" outlined size="small" class="ml-auto @4xl:ml-1" @click="activeNav = 'coupons'" />
             </div>
             <p class="text-sm text-[#334155]">總張數：<span style="color: var(--primary)" class="font-medium">{{ auth.couponCount }}張</span></p>
           </div>
@@ -494,7 +479,7 @@ function saveAddr() {
             </div>
             <div class="text-right shrink-0">
               <p class="text-base font-bold" style="color: var(--primary)">${{ o.total.toLocaleString() }}</p>
-              <button class="text-xs underline mt-1" style="color: var(--primary)" @click="ui.toast('訂單明細開發中')">查看明細</button>
+              <Button label="查看明細" link size="small" class="!p-0 mt-1" @click="ui.toast('訂單明細開發中')" />
             </div>
           </div>
         </div>
@@ -509,13 +494,7 @@ function saveAddr() {
               <p class="text-sm text-[#475569]">目前可使用紅利點數</p>
               <p class="text-[32px] font-bold mt-1" style="color: var(--primary)">{{ auth.rewardPoints.toFixed(2) }}</p>
             </div>
-            <button
-              class="px-5 py-2.5 rounded-[6px] text-white text-sm font-medium transition-colors shrink-0"
-              style="background: var(--primary-bg)"
-              @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
-              @mouseleave="($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)'"
-              @click="usePoints"
-            >立即使用</button>
+            <Button label="立即使用" class="shrink-0" @click="usePoints" />
           </div>
           <div class="@3xl:w-[260px] bg-white rounded-[12px] shadow-card card-pad">
             <p class="text-sm text-[#475569]">即將到期 (30天內)</p>
@@ -637,14 +616,7 @@ function saveAddr() {
               >{{ c.scope }}</span>
               <p class="text-[12px] text-[#64748b]">有效期限 {{ c.expiry }}</p>
               <div class="mt-auto flex justify-end pt-1">
-                <button
-                  v-if="c.status === 'unused'"
-                  class="px-4 py-1.5 rounded-[6px] border text-[12px] font-medium transition-colors"
-                  style="border-color: var(--accent); color: var(--accent)"
-                  @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-200)'"
-                  @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
-                  @click="useCoupon"
-                >去使用</button>
+                <Button v-if="c.status === 'unused'" label="去使用" outlined size="small" @click="useCoupon" />
                 <span v-else class="text-[12px] text-[#94a3b8]">{{ couponStatusText[c.status] }}</span>
               </div>
             </div>
@@ -683,13 +655,7 @@ function saveAddr() {
               >{{ c.scope }}</span>
               <p class="text-[12px] text-[#64748b]">有效期限至 {{ c.expiry }}</p>
               <div class="mt-auto flex justify-end pt-1">
-                <button
-                  class="px-4 py-1.5 rounded-[6px] text-white text-[12px] font-medium transition-colors"
-                  style="background: var(--primary-bg)"
-                  @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
-                  @mouseleave="($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)'"
-                  @click="claimCoupon(c)"
-                >領取</button>
+                <Button label="領取" size="small" @click="claimCoupon(c)" />
               </div>
             </div>
           </div>
@@ -708,28 +674,24 @@ function saveAddr() {
           <div class="flex flex-col gap-4 pt-4 max-w-[440px]">
             <div class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">姓名</label>
-              <input
-                v-model="name"
-                type="text"
-                class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-              />
+              <InputText v-model="name" class="w-full" />
             </div>
 
             <div class="flex flex-col gap-2">
               <label class="text-sm text-[#334155]">性別</label>
               <div class="flex items-center gap-6">
-                <label class="flex items-center gap-2 cursor-pointer text-sm text-[#334155]">
-                  <input type="radio" value="male" v-model="gender" class="w-4 h-4 accent-[var(--primary)]" />
-                  男性
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer text-sm text-[#334155]">
-                  <input type="radio" value="female" v-model="gender" class="w-4 h-4 accent-[var(--primary)]" />
-                  女性
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer text-sm text-[#334155]">
-                  <input type="radio" value="other" v-model="gender" class="w-4 h-4 accent-[var(--primary)]" />
-                  其他
-                </label>
+                <div class="flex items-center gap-2 text-sm text-[#334155]">
+                  <RadioButton v-model="gender" value="male" input-id="gender-male" />
+                  <label for="gender-male" class="cursor-pointer">男性</label>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-[#334155]">
+                  <RadioButton v-model="gender" value="female" input-id="gender-female" />
+                  <label for="gender-female" class="cursor-pointer">女性</label>
+                </div>
+                <div class="flex items-center gap-2 text-sm text-[#334155]">
+                  <RadioButton v-model="gender" value="other" input-id="gender-other" />
+                  <label for="gender-other" class="cursor-pointer">其他</label>
+                </div>
               </div>
             </div>
 
@@ -747,16 +709,7 @@ function saveAddr() {
           </div>
 
           <div class="flex justify-end mt-6">
-            <button
-              :disabled="!profileDirty"
-              class="px-6 py-2.5 rounded-[6px] text-white text-sm font-medium transition-colors"
-              :style="profileDirty
-                ? 'background: var(--primary-bg); cursor: pointer'
-                : 'background: #cbd5e1; cursor: not-allowed'"
-              @mouseover="profileDirty && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)')"
-              @mouseleave="profileDirty && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)')"
-              @click="saveProfile"
-            >儲存修改</button>
+            <Button :disabled="!profileDirty" label="儲存修改" @click="saveProfile" />
           </div>
         </section>
 
@@ -766,55 +719,29 @@ function saveAddr() {
             <div class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">手機號碼</label>
               <div class="flex gap-2">
-                <div class="relative w-[110px]">
-                  <select
-                    v-model="phoneCode"
-                    class="appearance-none w-full h-[40px] pl-3 pr-8 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-                  >
-                    <option value="+886">+886</option>
-                    <option value="+852">+852</option>
-                  </select>
-                  <i class="pi pi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#64748b] pointer-events-none" />
-                </div>
-                <div class="flex-1 flex items-center gap-2 px-3 h-[40px] rounded-[6px] border border-[#cbd5e1] focus-within:border-[var(--primary)] transition-colors">
-                  <input
-                    v-model="phone"
-                    type="tel"
-                    class="flex-1 text-sm outline-none bg-transparent text-[#334155]"
-                  />
-                  <i class="pi pi-phone text-[#64748b] text-sm" />
-                </div>
+                <Select v-model="phoneCode" :options="phoneCodes" class="w-[110px]" />
+                <InputText v-model="phone" type="tel" class="flex-1" />
               </div>
             </div>
             <div class="flex gap-2">
-              <input
+              <InputText
                 v-model="verifyCode"
-                type="text"
                 placeholder="請輸入六位數驗證碼"
                 maxlength="6"
-                class="flex-1 h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155] placeholder-[#94a3b8]"
+                class="flex-1"
               />
-              <button
+              <Button
                 :disabled="codeCountdown > 0"
-                class="px-4 h-[40px] rounded-[6px] border border-[#cbd5e1] text-sm font-medium transition-colors whitespace-nowrap"
-                :class="codeCountdown > 0 ? 'text-[#94a3b8] cursor-not-allowed' : 'text-[#334155] hover:bg-gray-50'"
+                :label="codeCountdown > 0 ? `${codeCountdown}s 後重新發送` : '發送驗證碼'"
+                severity="secondary"
+                outlined
+                class="whitespace-nowrap"
                 @click="sendVerifyCode"
-              >
-                {{ codeCountdown > 0 ? `${codeCountdown}s 後重新發送` : '發送驗證碼' }}
-              </button>
+              />
             </div>
           </div>
           <div class="flex justify-end mt-6">
-            <button
-              :disabled="!phoneDirty"
-              class="px-6 py-2.5 rounded-[6px] text-white text-sm font-medium transition-colors"
-              :style="phoneDirty
-                ? 'background: var(--primary-bg); cursor: pointer'
-                : 'background: #cbd5e1; cursor: not-allowed'"
-              @mouseover="phoneDirty && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)')"
-              @mouseleave="phoneDirty && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)')"
-              @click="savePhone"
-            >儲存修改</button>
+            <Button :disabled="!phoneDirty" label="儲存修改" @click="savePhone" />
           </div>
         </section>
 
@@ -822,23 +749,10 @@ function saveAddr() {
         <section class="bg-white rounded-[12px] shadow-card card-pad">
           <div class="flex flex-col gap-1.5 max-w-[440px]">
             <label class="text-sm text-[#334155]">Email</label>
-            <input
-              v-model="email"
-              type="email"
-              class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-            />
+            <InputText v-model="email" type="email" class="w-full" />
           </div>
           <div class="flex justify-end mt-6">
-            <button
-              :disabled="!emailDirty"
-              class="px-6 py-2.5 rounded-[6px] text-white text-sm font-medium transition-colors"
-              :style="emailDirty
-                ? 'background: var(--primary-bg); cursor: pointer'
-                : 'background: #cbd5e1; cursor: not-allowed'"
-              @mouseover="emailDirty && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)')"
-              @mouseleave="emailDirty && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)')"
-              @click="saveEmail"
-            >儲存修改</button>
+            <Button :disabled="!emailDirty" label="儲存修改" @click="saveEmail" />
           </div>
         </section>
       </template>
@@ -876,16 +790,15 @@ function saveAddr() {
                 <p v-else class="text-xs text-[#94a3b8]">尚未綁定</p>
               </div>
             </div>
-            <button
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] border text-sm transition-colors shrink-0"
-              :class="acc.bound
-                ? 'border-[var(--primary)] text-[color:var(--primary)] hover:bg-purple-50'
-                : 'border-[#cbd5e1] text-[#64748b] hover:bg-gray-50'"
+            <Button
+              :label="acc.bound ? '已綁定' : '未綁定'"
+              :icon="acc.bound ? 'pi pi-link' : 'pi pi-times-circle'"
+              :severity="acc.bound ? 'primary' : 'secondary'"
+              outlined
+              size="small"
+              class="shrink-0"
               @click="toggleBind(acc)"
-            >
-              <i :class="acc.bound ? 'pi pi-link' : 'pi pi-times-circle'" class="text-xs" />
-              {{ acc.bound ? '已綁定' : '未綁定' }}
-            </button>
+            />
           </div>
         </div>
       </section>
@@ -897,16 +810,12 @@ function saveAddr() {
             <h2 class="text-lg font-bold text-[#020617]">收件地址</h2>
             <p class="text-sm text-[#64748b] mt-1">請確保此帳號為您本人使用，避免造成資料安全風險。</p>
           </div>
-          <button
-            class="flex items-center gap-1.5 px-4 py-2 rounded-[6px] text-white text-sm font-medium transition-colors shrink-0"
-            style="background: var(--primary-bg)"
-            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
-            @mouseleave="($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)'"
+          <Button
+            :label="addressTab === 'home' ? '新增地址' : '新增門市'"
+            icon="pi pi-plus"
+            class="shrink-0"
             @click="openAddAddr"
-          >
-            <i class="pi pi-plus text-xs" />
-            {{ addressTab === 'home' ? '新增地址' : '新增門市' }}
-          </button>
+          />
         </div>
 
         <!-- Tabs -->
@@ -967,26 +876,9 @@ function saveAddr() {
               </div>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <button
-                class="w-8 h-8 rounded-[6px] border border-[#cbd5e1] flex items-center justify-center text-[#64748b] hover:bg-gray-50 transition-colors"
-                @click="openEditAddr(addr)"
-              >
-                <i class="pi pi-pencil text-xs" />
-              </button>
-              <button
-                class="w-8 h-8 rounded-[6px] border border-[#cbd5e1] flex items-center justify-center text-[#ef4444] hover:bg-red-50 transition-colors"
-                @click="deleteAddr(addr.id)"
-              >
-                <i class="pi pi-trash text-xs" />
-              </button>
-              <button
-                v-if="!addr.isDefault"
-                class="px-3 py-1.5 rounded-[6px] border text-sm transition-colors whitespace-nowrap"
-                style="border-color: var(--accent); color: var(--accent)"
-                @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--accent-200)'"
-                @mouseleave="($event.currentTarget as HTMLElement).style.background = 'transparent'"
-                @click="setDefaultAddr(addr.id)"
-              >設為預設</button>
+              <Button icon="pi pi-pencil" severity="secondary" outlined size="small" @click="openEditAddr(addr)" />
+              <Button icon="pi pi-trash" severity="danger" outlined size="small" @click="deleteAddr(addr.id)" />
+              <Button v-if="!addr.isDefault" label="設為預設" outlined size="small" class="whitespace-nowrap" @click="setDefaultAddr(addr.id)" />
             </div>
           </div>
 
@@ -1010,67 +902,26 @@ function saveAddr() {
           <!-- Current password -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm text-[#334155]">目前密碼</label>
-            <div class="flex items-center gap-2 px-3 h-[40px] rounded-[6px] border border-[#cbd5e1] focus-within:border-[var(--primary)] transition-colors">
-              <input
-                v-model="pwCurrent"
-                :type="pwCurrentVisible ? 'text' : 'password'"
-                placeholder="請輸入目前密碼"
-                class="flex-1 text-sm outline-none bg-transparent text-[#334155] placeholder-[#94a3b8]"
-              />
-              <button type="button" class="text-[#64748b]" @click="pwCurrentVisible = !pwCurrentVisible">
-                <i :class="['pi', pwCurrentVisible ? 'pi-eye' : 'pi-eye-slash', 'text-sm']" />
-              </button>
-            </div>
+            <Password v-model="pwCurrent" :feedback="false" toggle-mask placeholder="請輸入目前密碼" fluid input-class="w-full" />
           </div>
 
           <!-- New password -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm text-[#334155]">新密碼</label>
-            <div class="flex items-center gap-2 px-3 h-[40px] rounded-[6px] border transition-colors"
-                 :style="pwNew && !pwNewValid ? 'border-color:#ef4444' : 'border-color:#cbd5e1'">
-              <input
-                v-model="pwNew"
-                :type="pwNewVisible ? 'text' : 'password'"
-                placeholder="請輸入新密碼"
-                class="flex-1 text-sm outline-none bg-transparent text-[#334155] placeholder-[#94a3b8]"
-              />
-              <button type="button" class="text-[#64748b]" @click="pwNewVisible = !pwNewVisible">
-                <i :class="['pi', pwNewVisible ? 'pi-eye' : 'pi-eye-slash', 'text-sm']" />
-              </button>
-            </div>
+            <Password v-model="pwNew" :feedback="false" toggle-mask :invalid="!!pwNew && !pwNewValid" placeholder="請輸入新密碼" fluid input-class="w-full" />
             <p v-if="pwNew && !pwNewValid" class="text-sm" style="color:#ef4444">需 8-20 位、且含英文與數字</p>
           </div>
 
           <!-- Confirm password -->
           <div class="flex flex-col gap-1.5">
             <label class="text-sm text-[#334155]">確認新密碼</label>
-            <div class="flex items-center gap-2 px-3 h-[40px] rounded-[6px] border transition-colors"
-                 :style="pwMismatch ? 'border-color:#ef4444' : 'border-color:#cbd5e1'">
-              <input
-                v-model="pwConfirm"
-                :type="pwConfirmVisible ? 'text' : 'password'"
-                placeholder="請再次輸入新密碼"
-                class="flex-1 text-sm outline-none bg-transparent text-[#334155] placeholder-[#94a3b8]"
-              />
-              <button type="button" class="text-[#64748b]" @click="pwConfirmVisible = !pwConfirmVisible">
-                <i :class="['pi', pwConfirmVisible ? 'pi-eye' : 'pi-eye-slash', 'text-sm']" />
-              </button>
-            </div>
+            <Password v-model="pwConfirm" :feedback="false" toggle-mask :invalid="pwMismatch" placeholder="請再次輸入新密碼" fluid input-class="w-full" />
             <p v-if="pwMismatch" class="text-sm" style="color:#ef4444">兩次密碼輸入不一致</p>
           </div>
         </div>
 
         <div class="flex justify-end mt-6">
-          <button
-            :disabled="!canChangePw"
-            class="px-6 py-2.5 rounded-[6px] text-white text-sm font-medium transition-colors"
-            :style="canChangePw
-              ? 'background: var(--primary-bg); cursor: pointer'
-              : 'background: #cbd5e1; cursor: not-allowed'"
-            @mouseover="canChangePw && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)')"
-            @mouseleave="canChangePw && (($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)')"
-            @click="changePassword"
-          >儲存修改</button>
+          <Button :disabled="!canChangePw" label="儲存修改" @click="changePassword" />
         </div>
       </section>
 
@@ -1093,9 +944,7 @@ function saveAddr() {
             <h3 class="font-bold text-[18px] text-[#020617]">
               {{ addrDrawerMode === 'edit' ? '編輯' : '新增' }}{{ addressTab === 'home' ? '宅配地址' : '超商門市' }}
             </h3>
-            <button class="text-[#334155] hover:opacity-70" @click="addrDrawerOpen = false">
-              <i class="pi pi-times" />
-            </button>
+            <Button icon="pi pi-times" severity="secondary" text rounded @click="addrDrawerOpen = false" />
           </div>
 
           <div class="flex flex-col gap-4 max-w-[440px] mx-auto">
@@ -1122,40 +971,19 @@ function saveAddr() {
 
             <div v-if="addressTab === 'store'" class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">門市名稱<span style="color:#ef4444"> *</span></label>
-              <input
-                v-model="form.storeName"
-                type="text"
-                placeholder="例：鑫工門市"
-                class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-              />
+              <InputText v-model="form.storeName" placeholder="例：鑫工門市" class="w-full" />
             </div>
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">收件人姓名<span style="color:#ef4444"> *</span></label>
-              <input
-                v-model="form.name"
-                type="text"
-                placeholder="請輸入收件人姓名"
-                class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-              />
+              <InputText v-model="form.name" placeholder="請輸入收件人姓名" class="w-full" />
             </div>
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">收件人電話<span style="color:#ef4444"> *</span></label>
               <div class="flex gap-2">
-                <select
-                  v-model="form.countryCode"
-                  class="w-[100px] h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-                >
-                  <option value="+886">+886</option>
-                  <option value="+852">+852</option>
-                </select>
-                <input
-                  v-model="form.phone"
-                  type="tel"
-                  placeholder="請輸入電話號碼"
-                  class="flex-1 h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-                />
+                <Select v-model="form.countryCode" :options="phoneCodes" class="w-[100px]" />
+                <InputText v-model="form.phone" type="tel" placeholder="請輸入電話號碼" class="flex-1" />
               </div>
             </div>
 
@@ -1163,18 +991,8 @@ function saveAddr() {
             <div v-if="addressTab === 'home'" class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">城市 / 區</label>
               <div class="flex gap-2">
-                <select
-                  v-model="form.city"
-                  class="flex-1 h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-                >
-                  <option v-for="c in cities" :key="c" :value="c">{{ c }}</option>
-                </select>
-                <select
-                  v-model="form.district"
-                  class="flex-1 h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-                >
-                  <option v-for="d in districts" :key="d" :value="d">{{ d }}</option>
-                </select>
+                <Select v-model="form.city" :options="cities" class="flex-1" />
+                <Select v-model="form.district" :options="districts" class="flex-1" />
               </div>
             </div>
 
@@ -1182,26 +1000,17 @@ function saveAddr() {
               <label class="text-sm text-[#334155]">
                 {{ addressTab === 'home' ? '詳細收件地址' : '門市地址' }}<span style="color:#ef4444"> *</span>
               </label>
-              <input
+              <InputText
                 v-model="form.detail"
-                type="text"
                 :placeholder="addressTab === 'home' ? '街道、門牌、樓層' : '門市完整地址'"
-                class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
+                class="w-full"
               />
             </div>
           </div>
 
           <div class="flex justify-end gap-2 mt-5 max-w-[440px] mx-auto">
-            <button
-              class="px-5 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors"
-              @click="addrDrawerOpen = false"
-            >取消</button>
-            <button
-              :disabled="!formValid"
-              class="px-5 py-2 rounded-[6px] text-white text-sm font-medium transition-colors"
-              :style="formValid ? 'background: var(--primary-bg); cursor:pointer' : 'background:#cbd5e1; cursor:not-allowed'"
-              @click="saveAddr"
-            >{{ addrDrawerMode === 'edit' ? '儲存' : '確認新增' }}</button>
+            <Button label="取消" severity="secondary" outlined @click="addrDrawerOpen = false" />
+            <Button :disabled="!formValid" :label="addrDrawerMode === 'edit' ? '儲存' : '確認新增'" @click="saveAddr" />
           </div>
         </div>
       </div>

@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-
-const emit = defineEmits<{ close: [] }>()
+const visible = defineModel<boolean>('visible', { default: false })
 
 interface Coupon {
   id: number
@@ -44,88 +42,55 @@ const coupons: Coupon[] = [
     disabled: true,
   },
 ]
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
-}
-onMounted(() => document.addEventListener('keydown', onKeydown))
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="drawer">
-      <div class="fixed inset-0 z-[200] flex items-end justify-center">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/40" @click="emit('close')" />
+  <Drawer
+    v-model:visible="visible"
+    position="bottom"
+    header="可使用優惠券"
+    :style="{ height: 'auto', maxHeight: '80vh' }"
+  >
+    <!-- Coupon list -->
+    <div class="max-w-[680px] mx-auto flex flex-col">
+      <div
+        v-for="coupon in coupons"
+        :key="coupon.id"
+        class="flex items-stretch gap-4 px-[17.5px] py-[10.5px] border-b border-[#e2e8f0] last:border-b-0"
+      >
+        <!-- Left: discount value -->
+        <div
+          class="flex items-center gap-[8px] px-4 rounded-tl-[6px] rounded-bl-[6px] shrink-0 w-[160px] border-r border-dashed border-[#e5e7eb] py-3"
+          :class="coupon.disabled ? 'bg-[#cbd5e1]' : 'bg-[#f2ebff]'"
+        >
+          <i
+            class="pi pi-ticket text-[26px]"
+            :class="coupon.disabled ? 'text-[#9ca3af]' : 'text-[color:var(--primary)]'"
+          />
+          <span
+            class="text-[26px] font-medium leading-none whitespace-nowrap"
+            :class="coupon.disabled ? 'text-[#6b7280]' : 'text-[color:var(--primary)]'"
+          >{{ coupon.discount }}</span>
+        </div>
 
-        <!-- Panel -->
-        <div class="panel relative z-10 w-full max-w-[680px] bg-white rounded-t-[12px] shadow-[0px_20px_25px_-5px_rgba(0,0,0,0.1),0px_8px_10px_-6px_rgba(0,0,0,0.1)] flex flex-col max-h-[80vh]">
-          <!-- Header -->
-          <div class="flex items-center justify-between px-[17.5px] py-[17.5px] shrink-0 border-b border-[#e2e8f0]">
-            <span class="font-semibold text-[#334155] text-[21px] leading-normal">可使用優惠券</span>
-            <button
-              class="w-[35px] h-[35px] flex items-center justify-center rounded-[6px] hover:bg-gray-100 transition-colors"
-              @click="emit('close')"
-            >
-              <i class="pi pi-times text-[#334155] text-sm" />
-            </button>
-          </div>
-
-          <!-- Coupon list -->
-          <div class="overflow-y-auto flex-1 px-[15.75px] pb-[15.75px]">
-            <div
-              v-for="coupon in coupons"
-              :key="coupon.id"
-              class="flex items-stretch gap-4 px-[17.5px] py-[10.5px] border-b border-[#e2e8f0] last:border-b-0"
-            >
-              <!-- Left: discount value -->
-              <div
-                class="flex items-center gap-[8px] px-4 rounded-tl-[6px] rounded-bl-[6px] shrink-0 w-[160px] border-r border-dashed border-[#e5e7eb] py-3"
-                :class="coupon.disabled ? 'bg-[#cbd5e1]' : 'bg-[#f2ebff]'"
-              >
-                <i
-                  class="pi pi-ticket text-[26px]"
-                  :class="coupon.disabled ? 'text-[#9ca3af]' : 'text-[color:var(--primary)]'"
-                />
-                <span
-                  class="text-[26px] font-medium leading-none whitespace-nowrap"
-                  :class="coupon.disabled ? 'text-[#6b7280]' : 'text-[color:var(--primary)]'"
-                >{{ coupon.discount }}</span>
-              </div>
-
-              <!-- Right: coupon info -->
-              <div class="flex flex-col gap-2 py-2 flex-1 min-w-0">
-                <p
-                  class="font-semibold text-[18px] leading-snug"
-                  :class="coupon.disabled ? 'text-[#64748b]' : 'text-[#334155]'"
-                >{{ coupon.name }}</p>
-                <p class="text-sm text-[#64748b]">{{ coupon.description }}</p>
-                <span
-                  class="inline-flex items-center px-[7px] py-[3.5px] rounded-full text-[12px] font-bold w-fit"
-                  :class="{
-                    'bg-[#fee2e2] text-[#b91c1c]': coupon.tagType === 'danger',
-                    'bg-[#e0f2fe] text-[#0369a1]': coupon.tagType === 'info',
-                    'bg-[#f1f5f9] text-[#475569]': coupon.tagType === 'secondary',
-                  }"
-                >{{ coupon.tagText }}</span>
-                <p class="text-sm text-[#64748b]">{{ coupon.expiry }}</p>
-              </div>
-            </div>
-          </div>
+        <!-- Right: coupon info -->
+        <div class="flex flex-col gap-2 py-2 flex-1 min-w-0">
+          <p
+            class="font-semibold text-[18px] leading-snug"
+            :class="coupon.disabled ? 'text-[#64748b]' : 'text-[#334155]'"
+          >{{ coupon.name }}</p>
+          <p class="text-sm text-[#64748b]">{{ coupon.description }}</p>
+          <span
+            class="inline-flex items-center px-[7px] py-[3.5px] rounded-full text-[12px] font-bold w-fit"
+            :class="{
+              'bg-[#fee2e2] text-[#b91c1c]': coupon.tagType === 'danger',
+              'bg-[#e0f2fe] text-[#0369a1]': coupon.tagType === 'info',
+              'bg-[#f1f5f9] text-[#475569]': coupon.tagType === 'secondary',
+            }"
+          >{{ coupon.tagText }}</span>
+          <p class="text-sm text-[#64748b]">{{ coupon.expiry }}</p>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </Drawer>
 </template>
-
-<style scoped>
-.drawer-enter-active { transition: opacity 0.25s ease; }
-.drawer-leave-active { transition: opacity 0.2s ease; }
-.drawer-enter-active .panel { transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1); }
-.drawer-leave-active .panel { transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
-.drawer-enter-from,
-.drawer-leave-to { opacity: 0; }
-.drawer-enter-from .panel,
-.drawer-leave-to .panel { transform: translateY(100%); }
-</style>

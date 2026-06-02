@@ -41,12 +41,6 @@ function isGroupLocked(group: CartGroup) {
 function goCheckout() {
   router.push('/checkout')
 }
-
-const tagClass: Record<string, string> = {
-  info:      'bg-[#e0f2fe] text-[#0369a1]',
-  danger:    'bg-[#fee2e2] text-[#b91c1c]',
-  secondary: 'bg-[#f1f5f9] text-[#475569]',
-}
 </script>
 
 <template>
@@ -57,12 +51,7 @@ const tagClass: Record<string, string> = {
     <!-- Page header -->
     <div>
       <div class="max-w-[1280px] mx-auto px-4 py-[22px] flex items-center gap-3">
-        <button
-          class="flex items-center justify-center w-8 h-8 rounded-[6px] hover:bg-gray-100 text-[#334155] transition-colors"
-          @click="router.back()"
-        >
-          <i class="pi pi-arrow-left text-sm" />
-        </button>
+        <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="router.back()" />
         <h1 class="font-bold text-[#020617]" :class="isPC ? 'text-2xl' : 'text-xl'">購物車結帳</h1>
       </div>
     </div>
@@ -88,28 +77,23 @@ const tagClass: Record<string, string> = {
         <!-- Group header -->
         <div class="cart-divider flex items-center gap-4 px-[var(--card-pad)] py-[var(--card-pad)]">
           <!-- Group select-all checkbox -->
-          <button
-            class="flex items-center gap-2 shrink-0"
-            @click="toggleGroupAll(group)"
-          >
-            <div
-              class="w-[17.5px] h-[17.5px] rounded-[4px] border flex items-center justify-center transition-colors"
-              :style="isGroupAllChecked(group)
-                ? 'background: var(--primary); border-color: var(--primary)'
-                : 'background: white; border-color: #cbd5e1'"
-            >
-              <i v-if="isGroupAllChecked(group)" class="pi pi-check text-white" style="font-size: 10px" />
-            </div>
-            <span class="text-sm text-[#334155]">全選</span>
-          </button>
+          <div class="flex items-center gap-2 shrink-0">
+            <Checkbox
+              :model-value="isGroupAllChecked(group)"
+              binary
+              :input-id="'grp-' + group.id"
+              @update:model-value="toggleGroupAll(group)"
+            />
+            <label :for="'grp-' + group.id" class="text-sm text-[#334155] cursor-pointer">全選</label>
+          </div>
           <span class="font-medium text-[17.5px] text-[#334155]">{{ group.sellerName }}</span>
           <div class="flex items-center gap-2">
-            <span
+            <Tag
               v-for="tag in group.tags"
               :key="tag.label"
-              class="px-[7px] py-[3.5px] rounded-[6px] text-[12.25px] font-bold"
-              :class="tagClass[tag.type]"
-            >{{ tag.label }}</span>
+              :value="tag.label"
+              :severity="tag.type"
+            />
           </div>
         </div>
 
@@ -118,16 +102,7 @@ const tagClass: Record<string, string> = {
           <!-- Item row -->
           <div class="flex items-center gap-4 px-[var(--card-pad)] py-[var(--card-pad)]" :class="isPC ? 'gap-[14px]' : 'gap-3'">
             <!-- Checkbox -->
-            <button class="shrink-0" @click="item.checked = !item.checked">
-              <div
-                class="w-[17.5px] h-[17.5px] rounded-[4px] border flex items-center justify-center transition-colors"
-                :style="item.checked
-                  ? 'background: var(--primary); border-color: var(--primary)'
-                  : 'background: white; border-color: #cbd5e1'"
-              >
-                <i v-if="item.checked" class="pi pi-check text-white" style="font-size: 10px" />
-              </div>
-            </button>
+            <Checkbox v-model="item.checked" binary class="shrink-0" />
 
             <!-- Image -->
             <div
@@ -149,25 +124,15 @@ const tagClass: Record<string, string> = {
                 </div>
                 <div class="flex items-center gap-4 text-[14px]">
                   <span class="text-[#334155]">數量</span>
-                  <div class="flex items-center">
-                    <button
-                      class="w-[35px] h-[33px] border border-[#cbd5e1] rounded-l-[6px] flex items-center justify-center hover:bg-gray-50"
-                      @click="item.qty > 1 && item.qty--"
-                    >
-                      <i class="pi pi-minus text-[#334155]" style="font-size: 10px" />
-                    </button>
-                    <input
-                      v-model.number="item.qty"
-                      type="number"
-                      class="qty-input w-[31px] h-[33px] border-y border-[#cbd5e1] text-center text-sm text-[#334155] outline-none bg-white"
-                    />
-                    <button
-                      class="w-[35px] h-[33px] border border-[#cbd5e1] rounded-r-[6px] flex items-center justify-center hover:bg-gray-50"
-                      @click="item.qty++"
-                    >
-                      <i class="pi pi-plus text-[#334155]" style="font-size: 10px" />
-                    </button>
-                  </div>
+                  <InputNumber
+                    v-model="item.qty"
+                    :min="1"
+                    show-buttons
+                    button-layout="horizontal"
+                    increment-button-icon="pi pi-plus"
+                    decrement-button-icon="pi pi-minus"
+                    class="qty-stepper"
+                  />
                 </div>
               </div>
 
@@ -177,14 +142,15 @@ const tagClass: Record<string, string> = {
                   <span v-if="item.original" class="text-sm text-[#64748b] line-through">${{ item.original }}</span>
                   <span class="font-medium leading-none" style="color: var(--primary)" :class="isPC ? 'text-[24px]' : 'text-base'">${{ item.price }}</span>
                 </div>
-                <button
+                <Button
                   v-if="!isGroupLocked(group)"
-                  class="flex items-center gap-1.5 px-[10.5px] py-[7px] rounded-[6px] hover:bg-red-50 transition-colors text-[#ef4444] text-sm font-medium"
+                  label="刪除"
+                  icon="pi pi-trash"
+                  severity="danger"
+                  text
+                  size="small"
                   @click="removeItem(group, item.id)"
-                >
-                  <i class="pi pi-trash" style="font-size: 13px" />
-                  刪除
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -238,17 +204,15 @@ const tagClass: Record<string, string> = {
     <div v-if="!isEmpty" class="sticky bottom-0 z-40 bg-white border-t border-b border-[#e2e8f0]">
       <div class="max-w-[1280px] mx-auto px-4 py-[18px] flex items-center justify-between">
         <!-- Global select all -->
-        <button class="flex items-center gap-2" @click="toggleGlobalAll">
-          <div
-            class="w-[21px] h-[21px] rounded-[4px] border flex items-center justify-center transition-colors"
-            :style="globalAllChecked
-              ? 'background: var(--primary); border-color: var(--primary)'
-              : 'background: white; border-color: #cbd5e1'"
-          >
-            <i v-if="globalAllChecked" class="pi pi-check text-white" style="font-size: 11px" />
-          </div>
-          <span class="text-[15.75px] text-[#334155]">選擇全部購物車</span>
-        </button>
+        <div class="flex items-center gap-2">
+          <Checkbox
+            :model-value="globalAllChecked"
+            binary
+            input-id="global-all"
+            @update:model-value="toggleGlobalAll"
+          />
+          <label for="global-all" class="text-[15.75px] text-[#334155] cursor-pointer">選擇全部購物車</label>
+        </div>
 
         <!-- Total + checkout -->
         <div class="flex items-center gap-8">
@@ -256,15 +220,7 @@ const tagClass: Record<string, string> = {
             <span class="text-[18px] text-[#334155]">訂單總金額</span>
             <span class="text-[30px] font-bold" style="color: var(--primary)">${{ globalTotal.toLocaleString() }}</span>
           </div>
-          <button
-            class="px-16 py-[9.75px] rounded-[6px] text-white font-medium text-[15.75px] transition-colors"
-            style="background: var(--primary-bg)"
-            @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
-            @mouseleave="($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)'"
-            @click="goCheckout"
-          >
-            去結帳
-          </button>
+          <Button label="去結帳" class="px-16" @click="goCheckout" />
         </div>
       </div>
     </div>
@@ -272,17 +228,6 @@ const tagClass: Record<string, string> = {
 </template>
 
 <style scoped>
-.qty-input {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-.qty-input::-webkit-inner-spin-button,
-.qty-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  appearance: none;
-  margin: 0;
-}
-
 .cart-divider,
 .cart-divider-top {
   position: relative;

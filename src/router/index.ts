@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/HomePage.vue'
+import ThemeHallPage from '../views/ThemeHallPage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
 import ProductDetailPage from '../views/ProductDetailPage.vue'
 import CartPage from '../views/CartPage.vue'
@@ -15,6 +16,7 @@ export default createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', component: HomePage },
+    { path: '/theme', component: ThemeHallPage },
     { path: '/category/:tab', component: CategoryPage },
     { path: '/product/:id', component: ProductDetailPage },
     { path: '/cart', component: CartPage },

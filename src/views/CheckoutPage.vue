@@ -116,22 +116,12 @@ function openCouponDrawer() {
 }
 function confirmCouponDrawer() {
   couponDrawerOpen.value = false
-  showToast('已套用選擇的優惠券')
+  ui.toast('已套用選擇的優惠券')
 }
 
-// --- Toast ---
-const toastVisible = ref(false)
-const toastMessage = ref('')
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-function showToast(msg: string) {
-  toastMessage.value = msg
-  toastVisible.value = true
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { toastVisible.value = false }, 3000)
-}
 function applyCouponCode() {
   if (!couponCode.value.trim()) return
-  showToast('已套用選擇的優惠券')
+  ui.toast('已套用選擇的優惠券')
 }
 
 // --- Shipping drawer ---
@@ -252,9 +242,24 @@ const shippingMethodLabel = computed(() => {
 })
 const selectedHome = computed(() => homeAddresses.value.find(a => a.id === selectedHomeId.value))
 const selectedStore = computed(() => storeAddresses.value.find(a => a.id === selectedStoreId.value))
-const rewardPoints = ref('')
-const shoppingCredit = ref('')
+const rewardPoints = ref<number | null>(null)
+const shoppingCredit = ref<number | null>(null)
 const paymentMethod = ref('credit')
+
+const invoiceCarriers = [
+  { label: '會員載具（電子信箱）', value: 'member-email' },
+  { label: '手機條碼', value: 'mobile' },
+  { label: '自然人憑證', value: 'natural' },
+]
+const paymentMethods = [
+  { label: '線上信用卡', value: 'credit' },
+  { label: 'ATM 轉帳', value: 'atm' },
+  { label: '貨到付款', value: 'cod' },
+]
+const drawerCountryCodes = ['+886', '+852']
+const drawerCountries = ['台灣', '香港']
+const drawerCities = ['高雄市', '台北市', '桃園市']
+const drawerDistricts = ['前鎮區', '三民區', '信義區']
 
 // Money breakdown (mock)
 const productTotal = 1976
@@ -281,12 +286,7 @@ const totalSaved = computed(() =>
     <!-- Page header -->
     <div>
       <div class="max-w-[1280px] mx-auto px-4 py-[22px] flex items-center gap-3">
-        <button
-          class="flex items-center justify-center w-8 h-8 rounded-[6px] hover:bg-gray-100 text-[#334155] transition-colors"
-          @click="router.back()"
-        >
-          <i class="pi pi-arrow-left text-sm" />
-        </button>
+        <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="router.back()" />
         <h1 class="font-bold text-[#020617] text-2xl">結帳</h1>
       </div>
     </div>
@@ -300,28 +300,15 @@ const totalSaved = computed(() =>
             <i class="pi pi-check-circle" />
             已套用『滿千折百』優惠券
           </span>
-          <button
-            class="px-[14px] py-[8px] rounded-[6px] text-white text-sm font-medium"
-            style="background: var(--primary-bg)"
-            @click="openCouponDrawer"
-          >
-            選擇可使用優惠券
-          </button>
-          <div class="flex items-center">
-            <input
+          <Button label="選擇可使用優惠券" @click="openCouponDrawer" />
+          <InputGroup class="w-[260px]">
+            <InputText
               v-model="couponCode"
-              type="text"
               placeholder="輸入優惠券優惠代碼"
-              class="h-[36px] w-[200px] px-3 text-sm rounded-l-[6px] border border-[#cbd5e1] border-r-0 outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
               @keyup.enter="applyCouponCode"
             />
-            <button
-              class="h-[36px] px-4 rounded-r-[6px] border border-[#cbd5e1] text-sm font-medium text-[#334155] hover:bg-gray-50 transition-colors"
-              @click="applyCouponCode"
-            >
-              使用
-            </button>
-          </div>
+            <Button label="使用" severity="secondary" outlined @click="applyCouponCode" />
+          </InputGroup>
         </div>
       </section>
 
@@ -393,13 +380,14 @@ const totalSaved = computed(() =>
           </div>
           <div class="flex items-center gap-3">
             <span class="text-sm text-[#334155]">{{ shippingMethodLabel }}</span>
-            <button
-              class="text-sm flex items-center gap-1"
-              style="color: var(--primary)"
+            <Button
+              label="選擇運送方式"
+              icon="pi pi-chevron-right"
+              icon-pos="right"
+              link
+              size="small"
               @click="openShipDrawer"
-            >
-              選擇運送方式 <i class="pi pi-chevron-right text-[10px]" />
-            </button>
+            />
           </div>
           <div class="text-sm text-[#334155] mt-1">配送地址</div>
           <div class="text-sm text-[#334155]" v-if="shipMethod === 'home' && selectedHome">
@@ -420,25 +408,11 @@ const totalSaved = computed(() =>
         <div class="card-pad flex flex-col gap-3 max-w-[440px]">
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[#334155]">發票載具</label>
-            <div class="relative">
-              <select
-                v-model="invoiceCarrierType"
-                class="appearance-none w-full h-[36px] pl-3 pr-9 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-              >
-                <option value="member-email">會員載具（電子信箱）</option>
-                <option value="mobile">手機條碼</option>
-                <option value="natural">自然人憑證</option>
-              </select>
-              <i class="pi pi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#64748b] pointer-events-none" />
-            </div>
+            <Select v-model="invoiceCarrierType" :options="invoiceCarriers" option-label="label" option-value="value" class="w-full" />
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-sm text-[#334155]">Email</label>
-            <input
-              v-model="invoiceEmail"
-              type="email"
-              class="h-[36px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-            />
+            <InputText v-model="invoiceEmail" type="email" class="w-full" />
           </div>
         </div>
       </section>
@@ -452,28 +426,20 @@ const totalSaved = computed(() =>
           <div class="flex flex-wrap items-center gap-2 text-sm text-[#334155]">
             <span class="font-medium w-[60px]">紅利金</span>
             <span>使用</span>
-            <div class="flex items-center">
-              <span class="h-[32px] px-2 text-xs flex items-center bg-[#f1f5f9] rounded-l-[6px] border border-[#cbd5e1] border-r-0 text-[#64748b]">NT$</span>
-              <input
-                v-model="rewardPoints"
-                type="number"
-                class="qty-input h-[32px] w-[100px] px-2 text-sm border border-[#cbd5e1] rounded-r-[6px] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-              />
-            </div>
+            <InputGroup class="w-[160px]">
+              <InputGroupAddon>NT$</InputGroupAddon>
+              <InputNumber v-model="rewardPoints" :min="0" />
+            </InputGroup>
             <span>元</span>
             <span class="text-[#64748b]">/ 尚有紅利金 <span style="color: var(--primary)">$100</span> 元可使用</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-sm text-[#334155]">
             <span class="font-medium w-[60px]">購物金</span>
             <span>使用</span>
-            <div class="flex items-center">
-              <span class="h-[32px] px-2 text-xs flex items-center bg-[#f1f5f9] rounded-l-[6px] border border-[#cbd5e1] border-r-0 text-[#64748b]">NT$</span>
-              <input
-                v-model="shoppingCredit"
-                type="number"
-                class="qty-input h-[32px] w-[100px] px-2 text-sm border border-[#cbd5e1] rounded-r-[6px] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-              />
-            </div>
+            <InputGroup class="w-[160px]">
+              <InputGroupAddon>NT$</InputGroupAddon>
+              <InputNumber v-model="shoppingCredit" :min="0" />
+            </InputGroup>
             <span>元</span>
             <span class="text-[#64748b]">/ 尚有購物金 <span style="color: var(--primary)">$500</span> 元可使用</span>
           </div>
@@ -487,17 +453,7 @@ const totalSaved = computed(() =>
         </div>
         <div class="card-pad max-w-[440px]">
           <label class="text-sm text-[#334155] block mb-1">選擇付款方式</label>
-          <div class="relative">
-            <select
-              v-model="paymentMethod"
-              class="appearance-none w-full h-[36px] pl-3 pr-9 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-            >
-              <option value="credit">線上信用卡</option>
-              <option value="atm">ATM 轉帳</option>
-              <option value="cod">貨到付款</option>
-            </select>
-            <i class="pi pi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#64748b] pointer-events-none" />
-          </div>
+          <Select v-model="paymentMethod" :options="paymentMethods" option-label="label" option-value="value" class="w-full" />
         </div>
       </section>
 
@@ -567,34 +523,9 @@ const totalSaved = computed(() =>
           </div>
           <span class="text-sm" style="color: #ef4444">共省下 -${{ totalSaved.toLocaleString() }}</span>
         </div>
-        <button
-          class="px-16 py-[9.75px] rounded-[6px] text-white font-medium text-[15.75px] transition-colors"
-          style="background: var(--primary-bg)"
-          @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
-          @mouseleave="($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)'"
-          @click="placeOrder"
-        >
-          去付款
-        </button>
+        <Button label="去付款" class="px-16" @click="placeOrder" />
       </div>
     </div>
-
-    <!-- ============== Toast ============== -->
-    <Transition name="toast">
-      <div
-        v-if="toastVisible"
-        class="fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-[#f0fdf4] border-2 border-[#16a34a] rounded-[8px] px-4 py-2 flex items-center gap-2 shadow-md min-w-[280px]"
-      >
-        <i class="pi pi-check text-[#16a34a]" />
-        <div class="flex-1">
-          <p class="text-sm font-bold text-[#16a34a]">成功</p>
-          <p class="text-xs text-[#334155]">{{ toastMessage }}</p>
-        </div>
-        <button class="text-[#16a34a] hover:opacity-70" @click="toastVisible = false">
-          <i class="pi pi-times text-xs" />
-        </button>
-      </div>
-    </Transition>
 
     <!-- ============== Coupon Drawer ============== -->
     <Transition name="drawer-fade">
@@ -606,9 +537,7 @@ const totalSaved = computed(() =>
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-[18px] text-[#020617]">可使用優惠券</h3>
-            <button class="text-[#334155] hover:opacity-70" @click="couponDrawerOpen = false">
-              <i class="pi pi-times" />
-            </button>
+            <Button icon="pi pi-times" severity="secondary" text rounded @click="couponDrawerOpen = false" />
           </div>
 
           <!-- Coupon list -->
@@ -637,28 +566,15 @@ const totalSaved = computed(() =>
               <!-- Right side: radio / disabled note -->
               <div class="w-[120px] shrink-0 flex items-center justify-center">
                 <span v-if="c.disabled" class="text-[13px]" style="color: #ef4444">{{ c.disabledReason }}</span>
-                <input
-                  v-else
-                  type="radio"
-                  :value="c.id"
-                  v-model="couponDrawerSelected"
-                  class="w-5 h-5 accent-[var(--primary)] cursor-pointer"
-                />
+                <RadioButton v-else v-model="couponDrawerSelected" :value="c.id" />
               </div>
             </label>
           </div>
 
           <!-- Footer -->
           <div class="flex justify-end gap-2 mt-4">
-            <button
-              class="px-5 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors"
-              @click="couponDrawerOpen = false"
-            >取消</button>
-            <button
-              class="px-5 py-2 rounded-[6px] text-white text-sm font-medium transition-colors"
-              style="background: var(--primary-bg)"
-              @click="confirmCouponDrawer"
-            >確認</button>
+            <Button label="取消" severity="secondary" outlined @click="couponDrawerOpen = false" />
+            <Button label="確認" @click="confirmCouponDrawer" />
           </div>
         </div>
       </div>
@@ -676,9 +592,7 @@ const totalSaved = computed(() =>
           <template v-if="shipDrawerView === 'list'">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-bold text-[18px] text-[#020617]">選擇運送方式</h3>
-              <button class="text-[#334155] hover:opacity-70" @click="shipDrawerOpen = false">
-                <i class="pi pi-times" />
-              </button>
+              <Button icon="pi pi-times" severity="secondary" text rounded @click="shipDrawerOpen = false" />
             </div>
 
             <div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
@@ -702,12 +616,11 @@ const totalSaved = computed(() =>
                     :key="addr.id"
                     class="flex items-start gap-3 px-2 py-2"
                   >
-                    <input
-                      type="radio"
+                    <RadioButton
                       :value="addr.id"
                       v-model="selectedHomeId"
-                      class="mt-1 w-4 h-4 accent-[var(--primary)] cursor-pointer"
                       :disabled="addr.unavailable"
+                      class="mt-1"
                     />
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 text-sm text-[#334155]">
@@ -722,23 +635,11 @@ const totalSaved = computed(() =>
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                      <button
-                        v-if="!addr.isDefault"
-                        class="px-3 py-1 rounded-[6px] border text-[12px] hover:bg-purple-50 transition-colors"
-                        style="border-color: var(--primary); color: var(--primary)"
-                        @click="setDefaultHome(addr.id)"
-                      >設為預設</button>
-                      <button
-                        class="px-3 py-1 rounded-[6px] border text-[12px] hover:bg-red-50 transition-colors"
-                        style="border-color: #ef4444; color: #ef4444"
-                        @click="deleteHome(addr.id)"
-                      >刪除</button>
+                      <Button v-if="!addr.isDefault" label="設為預設" outlined size="small" @click="setDefaultHome(addr.id)" />
+                      <Button label="刪除" severity="danger" outlined size="small" @click="deleteHome(addr.id)" />
                     </div>
                   </div>
-                  <button
-                    class="w-full px-4 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors"
-                    @click="shipDrawerView = 'add-home'"
-                  >+ 新增宅配地址</button>
+                  <Button label="新增宅配地址" icon="pi pi-plus" severity="secondary" outlined class="w-full" @click="shipDrawerView = 'add-home'" />
                 </div>
               </div>
 
@@ -762,11 +663,10 @@ const totalSaved = computed(() =>
                     :key="addr.id"
                     class="flex items-start gap-3 px-2 py-2"
                   >
-                    <input
-                      type="radio"
+                    <RadioButton
                       :value="addr.id"
                       v-model="selectedStoreId"
-                      class="mt-1 w-4 h-4 accent-[var(--primary)] cursor-pointer"
+                      class="mt-1"
                     />
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 text-sm text-[#334155]">
@@ -787,30 +687,18 @@ const totalSaved = computed(() =>
                       </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                      <button
-                        v-if="!addr.isDefault"
-                        class="px-3 py-1 rounded-[6px] border text-[12px] hover:bg-purple-50 transition-colors"
-                        style="border-color: var(--primary); color: var(--primary)"
-                        @click="setDefaultStore(addr.id)"
-                      >設為預設</button>
-                      <button
-                        class="px-3 py-1 rounded-[6px] border text-[12px] hover:bg-red-50 transition-colors"
-                        style="border-color: #ef4444; color: #ef4444"
-                        @click="deleteStore(addr.id)"
-                      >刪除</button>
+                      <Button v-if="!addr.isDefault" label="設為預設" outlined size="small" @click="setDefaultStore(addr.id)" />
+                      <Button label="刪除" severity="danger" outlined size="small" @click="deleteStore(addr.id)" />
                     </div>
                   </div>
-                  <button
-                    class="w-full px-4 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors"
-                    @click="shipDrawerView = 'add-store'"
-                  >+ 新增超商地址</button>
+                  <Button label="新增超商地址" icon="pi pi-plus" severity="secondary" outlined class="w-full" @click="shipDrawerView = 'add-store'" />
                 </div>
               </div>
             </div>
 
             <div class="flex justify-end gap-2 mt-4">
-              <button class="px-5 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors" @click="shipDrawerOpen = false">取消</button>
-              <button class="px-5 py-2 rounded-[6px] text-white text-sm font-medium" style="background: var(--primary-bg)" @click="shipDrawerOpen = false">確認</button>
+              <Button label="取消" severity="secondary" outlined @click="shipDrawerOpen = false" />
+              <Button label="確認" @click="shipDrawerOpen = false" />
             </div>
           </template>
 
@@ -818,57 +706,41 @@ const totalSaved = computed(() =>
           <template v-else-if="shipDrawerView === 'add-home'">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-bold text-[18px] text-[#020617]">新增宅配地址</h3>
-              <button class="text-[#334155] hover:opacity-70" @click="shipDrawerView = 'list'">
-                <i class="pi pi-times" />
-              </button>
+              <Button icon="pi pi-times" severity="secondary" text rounded @click="shipDrawerView = 'list'" />
             </div>
 
             <div class="flex flex-col gap-3 max-w-[440px] mx-auto">
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">收件人姓名</label>
-                <input v-model="newHomeName" type="text" class="h-[36px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]" />
+                <InputText v-model="newHomeName" class="w-full" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">收件人電話</label>
                 <div class="flex gap-2">
-                  <select v-model="newHomeCountryCode" class="appearance-none h-[36px] pl-3 pr-8 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155] w-[100px]">
-                    <option value="+886">+886</option>
-                    <option value="+852">+852</option>
-                  </select>
-                  <input v-model="newHomePhone" type="tel" class="flex-1 h-[36px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]" />
+                  <Select v-model="newHomeCountryCode" :options="drawerCountryCodes" class="w-[100px]" />
+                  <InputText v-model="newHomePhone" type="tel" class="flex-1" />
                 </div>
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">國別</label>
-                <select v-model="newHomeCountry" class="appearance-none h-[36px] pl-3 pr-8 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]">
-                  <option value="台灣">台灣</option>
-                  <option value="香港">香港</option>
-                </select>
+                <Select v-model="newHomeCountry" :options="drawerCountries" class="w-full" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">城市/區</label>
                 <div class="flex gap-2">
-                  <select v-model="newHomeCity" class="flex-1 appearance-none h-[36px] pl-3 pr-8 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]">
-                    <option value="高雄市">高雄市</option>
-                    <option value="台北市">台北市</option>
-                    <option value="桃園市">桃園市</option>
-                  </select>
-                  <select v-model="newHomeDistrict" class="flex-1 appearance-none h-[36px] pl-3 pr-8 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155]">
-                    <option value="前鎮區">前鎮區</option>
-                    <option value="三民區">三民區</option>
-                    <option value="信義區">信義區</option>
-                  </select>
+                  <Select v-model="newHomeCity" :options="drawerCities" class="flex-1" />
+                  <Select v-model="newHomeDistrict" :options="drawerDistricts" class="flex-1" />
                 </div>
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">詳細收件地址</label>
-                <input v-model="newHomeAddress" type="text" class="h-[36px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]" />
+                <InputText v-model="newHomeAddress" class="w-full" />
               </div>
             </div>
 
             <div class="flex justify-end gap-2 mt-4">
-              <button class="px-5 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors" @click="shipDrawerView = 'list'">取消</button>
-              <button class="px-5 py-2 rounded-[6px] text-white text-sm font-medium" style="background: var(--primary-bg)" @click="submitAddHome">確認新增</button>
+              <Button label="取消" severity="secondary" outlined @click="shipDrawerView = 'list'" />
+              <Button label="確認新增" @click="submitAddHome" />
             </div>
           </template>
 
@@ -876,9 +748,7 @@ const totalSaved = computed(() =>
           <template v-else-if="shipDrawerView === 'add-store'">
             <div class="flex items-center justify-between mb-4">
               <h3 class="font-bold text-[18px] text-[#020617]">新增超商門市</h3>
-              <button class="text-[#334155] hover:opacity-70" @click="shipDrawerView = 'list'">
-                <i class="pi pi-times" />
-              </button>
+              <Button icon="pi pi-times" severity="secondary" text rounded @click="shipDrawerView = 'list'" />
             </div>
 
             <div class="flex flex-col gap-4 max-w-[440px] mx-auto">
@@ -907,23 +777,20 @@ const totalSaved = computed(() =>
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">收件人姓名</label>
-                <input v-model="newStoreName" type="text" class="h-[36px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]" />
+                <InputText v-model="newStoreName" class="w-full" />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">收件人電話</label>
                 <div class="flex gap-2">
-                  <select v-model="newHomeCountryCode" class="appearance-none h-[36px] pl-3 pr-8 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors text-[#334155] w-[100px]">
-                    <option value="+886">+886</option>
-                    <option value="+852">+852</option>
-                  </select>
-                  <input v-model="newStorePhone" type="tel" class="flex-1 h-[36px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]" />
+                  <Select v-model="newHomeCountryCode" :options="drawerCountryCodes" class="w-[100px]" />
+                  <InputText v-model="newStorePhone" type="tel" class="flex-1" />
                 </div>
               </div>
             </div>
 
             <div class="flex justify-end gap-2 mt-4">
-              <button class="px-5 py-2 rounded-[6px] border border-[#cbd5e1] text-sm text-[#334155] hover:bg-gray-50 transition-colors" @click="shipDrawerView = 'list'">取消</button>
-              <button class="px-5 py-2 rounded-[6px] text-white text-sm font-medium" style="background: var(--primary-bg)" @click="submitAddStore">確認新增</button>
+              <Button label="取消" severity="secondary" outlined @click="shipDrawerView = 'list'" />
+              <Button label="確認新增" @click="submitAddStore" />
             </div>
           </template>
 
@@ -936,17 +803,6 @@ const totalSaved = computed(() =>
 <style scoped>
 .shadow-card {
   box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.qty-input {
-  -moz-appearance: textfield;
-  appearance: textfield;
-}
-.qty-input::-webkit-inner-spin-button,
-.qty-input::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  appearance: none;
-  margin: 0;
 }
 
 .cart-divider,
@@ -1002,16 +858,5 @@ const totalSaved = computed(() =>
 .drawer-slide-enter-from,
 .drawer-slide-leave-to {
   transform: translate(-50%, 100%);
-}
-
-/* ===== Toast ===== */
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.25s ease;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translate(-50%, -10px);
 }
 </style>

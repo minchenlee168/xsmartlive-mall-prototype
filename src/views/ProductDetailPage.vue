@@ -133,74 +133,47 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
                 <span v-if="product.noCoupon || product.isBundle" class="text-sm text-[#334155] px-3">
                   ＊已為優惠商品，不適用任何優惠券
                 </span>
-                <button
+                <Button
                   v-else
-                  class="flex items-center gap-1.5 text-sm font-medium transition-colors hover:underline"
-                  style="color: var(--primary)"
+                  label="查看可使用的優惠券"
+                  icon="pi pi-arrow-up-right"
+                  icon-pos="right"
+                  link
+                  size="small"
                   @click="showCouponDrawer = true"
-                >
-                  查看可使用的優惠券
-                  <i class="pi pi-arrow-up-right text-xs" />
-                </button>
+                />
               </div>
 
               <!-- Size (hidden for bundle products) -->
               <div class="flex items-center gap-6" v-if="!product.isBundle && product.hasVariant && product.sizes?.length">
                 <span class="text-sm text-[#334155] w-[80px] shrink-0">尺碼</span>
-                <div class="flex flex-wrap gap-2">
-                  <button
-                    v-for="size in product.sizes"
-                    :key="size"
-                    class="px-[13px] py-[9px] rounded-[6px] text-sm font-medium border transition-colors"
-                    :style="selectedSize === size
-                      ? { borderColor: 'var(--primary-200)', color: 'var(--primary)', background: 'transparent' }
-                      : { borderColor: '#f1f5f9', color: '#475569', background: '#f1f5f9' }"
-                    @click="selectedSize = size"
-                  >
-                    {{ size }}
-                  </button>
-                </div>
+                <SelectButton v-model="selectedSize" :options="product.sizes" :allow-empty="false" />
               </div>
 
               <!-- Quantity -->
               <div class="flex items-center gap-6">
                 <span class="text-sm text-[#334155] w-[80px] shrink-0">數量</span>
                 <div class="flex items-center gap-4">
-                  <div class="flex items-center">
-                    <button
-                      class="w-[35px] h-[34px] border border-[#cbd5e1] rounded-l-[6px] flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      @click="qty > 1 && qty--"
-                    >
-                      <i class="pi pi-minus text-xs text-[#334155]" />
-                    </button>
-                    <input
-                      v-model="qty"
-                      type="number"
-                      class="w-[48px] h-[34px] border-y border-[#cbd5e1] text-center text-sm text-[#334155] outline-none bg-white shadow-[0px_1px_1px_rgba(18,18,23,0.05)]"
-                    />
-                    <button
-                      class="w-[35px] h-[34px] border border-[#cbd5e1] rounded-r-[6px] flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      @click="qty++"
-                    >
-                      <i class="pi pi-plus text-xs text-[#334155]" />
-                    </button>
-                  </div>
+                  <InputNumber
+                    v-model="qty"
+                    :min="1"
+                    show-buttons
+                    button-layout="horizontal"
+                    increment-button-icon="pi pi-plus"
+                    decrement-button-icon="pi pi-minus"
+                    class="qty-stepper"
+                  />
                   <span class="text-sm text-[#334155]">還剩{{ product.stock ?? 1 }}{{ product.isBundle ? '組' : '件' }}</span>
                 </div>
               </div>
 
               <!-- Add to cart -->
               <div class="flex items-center">
-                <button
-                  class="flex items-center gap-[7px] px-[13px] py-[10px] rounded-[6px] text-sm font-medium text-white transition-colors"
-                  style="background: var(--primary-bg)"
-                  @mouseover="($event.currentTarget as HTMLElement).style.background = 'var(--primary-hover-bg)'"
-                  @mouseleave="($event.currentTarget as HTMLElement).style.background = 'var(--primary-bg)'"
+                <Button
+                  label="加入購物車"
+                  icon="pi pi-cart-plus"
                   @click="cart.addItem({ id: product.id, name: product.name, price: product.price, original: product.original, image: product.image }, selectedSize || '預設', qty)"
-                >
-                  <i class="pi pi-cart-plus text-sm" />
-                  加入購物車
-                </button>
+                />
               </div>
 
               <!-- Share -->
@@ -279,5 +252,5 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
     </main>
   </div>
 
-  <CouponDrawer v-if="showCouponDrawer" @close="showCouponDrawer = false" />
+  <CouponDrawer v-model:visible="showCouponDrawer" />
 </template>

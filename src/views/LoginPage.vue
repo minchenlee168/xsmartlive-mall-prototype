@@ -30,10 +30,10 @@ function socialLogin(provider: string) {
   router.push('/')
 }
 
+const countryCodes = ['+886', '+852', '+853', '+86']
 const countryCode = ref('+886')
 const phone = ref('')
 const password = ref('')
-const passwordVisible = ref(false)
 const captchaToken = ref('')
 const agreed = ref(false)
 const submitted = ref(false)
@@ -99,13 +99,14 @@ function onSubmit() {
           </span>
         </button>
 
-        <button
-          class="flex items-center gap-1.5 px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 text-[var(--surface-700)] text-base font-medium"
+        <Button
+          label="需要幫助"
+          icon="pi pi-question-circle"
+          icon-pos="right"
+          severity="secondary"
+          text
           @click="router.push('/help')"
-        >
-          需要幫助
-          <i class="pi pi-question-circle text-sm" />
-        </button>
+        />
       </div>
     </header>
 
@@ -135,57 +136,25 @@ function onSubmit() {
             <div class="flex gap-[10px] items-start">
               <div class="flex flex-col gap-[7px] w-[118px]">
                 <label class="text-sm" style="color: var(--surface-700)">國碼</label>
-                <div class="relative">
-                  <select
-                    v-model="countryCode"
-                    class="appearance-none w-full h-[33px] pl-[10.5px] pr-[35px] py-[7px] text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors"
-                    style="color: var(--surface-700); box-shadow: 0 1px 1px rgba(18,18,23,0.05)"
-                  >
-                    <option value="+886">+886</option>
-                    <option value="+852">+852</option>
-                    <option value="+853">+853</option>
-                    <option value="+86">+86</option>
-                  </select>
-                  <i class="pi pi-chevron-down absolute right-[10px] top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] pointer-events-none" />
-                </div>
+                <Select v-model="countryCode" :options="countryCodes" class="w-full" />
               </div>
               <div class="flex-1 flex flex-col gap-[7px]">
                 <label class="text-sm" style="color: var(--surface-700)">電話號碼</label>
-                <div class="flex items-center gap-[10.5px] px-[11.5px] py-[8px] rounded-[6px] border border-[#cbd5e1] bg-white focus-within:border-[var(--primary)] transition-colors"
-                     style="box-shadow: 0 1px 1px rgba(18,18,23,0.05)">
-                  <input
-                    v-model="phone"
-                    type="tel"
-                    placeholder="請輸入您的電話號碼"
-                    class="flex-1 text-sm outline-none bg-transparent placeholder-[var(--text-muted)]"
-                    style="color: var(--surface-700)"
-                  />
-                  <i class="pi pi-phone text-sm text-[var(--surface-700)]" />
-                </div>
+                <InputText v-model="phone" type="tel" placeholder="請輸入您的電話號碼" class="w-full" />
               </div>
             </div>
 
             <!-- Password -->
             <div class="flex flex-col gap-[7px]">
               <label class="text-sm" style="color: var(--surface-700)">密碼</label>
-              <div class="flex items-center gap-[10.5px] px-[11.5px] py-[8px] rounded-[6px] border border-[#cbd5e1] bg-white focus-within:border-[var(--primary)] transition-colors"
-                   style="box-shadow: 0 1px 1px rgba(18,18,23,0.05)">
-                <input
-                  v-model="password"
-                  :type="passwordVisible ? 'text' : 'password'"
-                  placeholder="請輸入您的密碼"
-                  class="flex-1 text-sm outline-none bg-transparent placeholder-[var(--text-muted)]"
-                  style="color: var(--surface-700)"
-                />
-                <button
-                  type="button"
-                  class="text-[var(--surface-700)] flex items-center"
-                  @click="passwordVisible = !passwordVisible"
-                  :aria-label="passwordVisible ? '隱藏密碼' : '顯示密碼'"
-                >
-                  <i :class="['pi', passwordVisible ? 'pi-eye' : 'pi-eye-slash', 'text-sm']" />
-                </button>
-              </div>
+              <Password
+                v-model="password"
+                :feedback="false"
+                toggle-mask
+                placeholder="請輸入您的密碼"
+                fluid
+                input-class="w-full"
+              />
               <a class="self-end text-base underline cursor-pointer" style="color: var(--primary)" @click="router.push('/forgot')">忘記密碼</a>
             </div>
 
@@ -200,14 +169,7 @@ function onSubmit() {
 
             <!-- Terms agreement -->
             <div class="flex gap-[7px] items-start">
-              <label class="relative inline-flex items-center cursor-pointer mt-[2px] shrink-0">
-                <input
-                  v-model="agreed"
-                  type="checkbox"
-                  class="appearance-none w-[17.5px] h-[17.5px] rounded-[4px] border border-[#cbd5e1] bg-white checked:bg-[var(--primary)] checked:border-[var(--primary)] transition-colors"
-                />
-                <i v-if="agreed" class="pi pi-check text-white text-[10px] absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-              </label>
+              <Checkbox v-model="agreed" binary input-id="login-agree" class="mt-[2px] shrink-0" />
               <div class="flex flex-col gap-2 flex-1">
                 <p class="text-base leading-[1.4]" style="color: var(--surface-700)">
                   我同意直播管家購物小幫手
@@ -222,18 +184,12 @@ function onSubmit() {
             </div>
 
             <!-- Submit button -->
-            <button
+            <Button
               type="submit"
               :disabled="!canSubmit"
-              class="w-full py-[14px] rounded-[6px] text-[16px] font-medium text-[#f0f4f7] transition-colors mt-1"
-              :style="canSubmit
-                ? 'background: var(--primary-bg); cursor: pointer'
-                : 'background: #949494; cursor: not-allowed'"
-              @mouseover="canSubmit && (($event.target as HTMLElement).style.background = 'var(--primary-hover-bg)')"
-              @mouseleave="canSubmit && (($event.target as HTMLElement).style.background = 'var(--primary-bg)')"
-            >
-              使用電話號碼登入
-            </button>
+              label="使用電話號碼登入"
+              class="w-full mt-1"
+            />
           </form>
 
           <!-- Divider -->

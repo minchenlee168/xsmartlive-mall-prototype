@@ -1,11 +1,24 @@
+<script setup lang="ts">
+withDefaults(defineProps<{
+  /** 主題館名稱 — 未設定 banner 圖時改顯示此名稱 */
+  name?: string
+  /** 主題館 banner 圖片網址 */
+  image?: string
+}>(), {
+  name: '主題館',
+})
+</script>
+
 <template>
-  <div class="relative h-[245px] rounded-[8px] overflow-hidden flex items-center justify-center">
+  <!-- 有設定 banner 圖：顯示圖片 -->
+  <div v-if="image" class="relative h-[15.3125rem] rounded-[0.5rem] overflow-hidden">
+    <img :src="image" :alt="name" class="w-full h-full object-cover" />
+  </div>
+
+  <!-- 沒有設定 banner 圖：名稱由區段標題顯示，這裡只留底色占位 -->
+  <div v-else class="relative h-[15.3125rem] rounded-[0.5rem] overflow-hidden">
     <div class="absolute inset-0" style="background-color: var(--primary-200)" />
     <div class="absolute inset-0 opacity-20"
-      style="background-image: repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 1px, transparent 0, transparent 50%); background-size: 12px 12px;" />
-    <div class="relative z-10 text-center">
-      <p class="text-[#ebedef] text-5xl font-bold">主題 banner</p>
-      <p class="text-white/70 text-base mt-2">點擊了解更多精選活動</p>
-    </div>
+      style="background-image: repeating-linear-gradient(45deg, var(--primary) 0, var(--primary) 0.0625rem, transparent 0, transparent 50%); background-size: 0.75rem 0.75rem;" />
   </div>
 </template>

@@ -12,6 +12,9 @@ const props = defineProps<{
   hasVariant?: boolean
   stock?: number
   image?: string
+  hideActions?: boolean
+  /** 簡易版：不顯示數量選擇器與「還剩X件」，仍保留 CTA 按鈕 */
+  simple?: boolean
 }>()
 
 const router = useRouter()
@@ -61,33 +64,21 @@ function onPrimaryAction(e: MouseEvent) {
       </div>
 
       <!-- Quantity + CTA -->
-      <div class="flex flex-col mt-auto" :class="isPC ? 'gap-2' : 'gap-1'">
+      <div v-if="!hideActions" class="flex flex-col mt-auto" :class="isPC ? 'gap-2' : 'gap-1'">
         <!-- Quantity selector -->
-        <div v-if="!hasVariant" class="flex flex-col" :class="isPC ? 'gap-1' : 'gap-1'">
+        <div v-if="!hasVariant && !simple" class="flex flex-col" :class="isPC ? 'gap-1' : 'gap-1'">
           <div class="flex items-center" :class="isPC ? 'gap-4' : 'gap-2'">
             <span class="text-[#334155]" :class="isPC ? 'text-sm' : 'text-[11px]'">數量</span>
-            <div class="flex items-center">
-              <button
-                class="border border-[#cbd5e1] flex items-center justify-center hover:bg-gray-50 transition-colors"
-                :class="isPC ? 'w-[35px] h-[34px] rounded-l-[6px]' : 'w-[26px] h-[26px] rounded-l-[4px]'"
-                @click="qty > 1 && qty--"
-              >
-                <i class="pi pi-minus text-[#334155]" :class="isPC ? 'text-xs' : 'text-[9px]'" />
-              </button>
-              <input
-                v-model="qty"
-                type="number"
-                class="border-y border-[#cbd5e1] text-center text-[#334155] outline-none bg-white"
-                :class="isPC ? 'w-[48px] h-[34px] text-sm' : 'w-[36px] h-[26px] text-[11px]'"
-              />
-              <button
-                class="border border-[#cbd5e1] flex items-center justify-center hover:bg-gray-50 transition-colors"
-                :class="isPC ? 'w-[35px] h-[34px] rounded-r-[6px]' : 'w-[26px] h-[26px] rounded-r-[4px]'"
-                @click="qty++"
-              >
-                <i class="pi pi-plus text-[#334155]" :class="isPC ? 'text-xs' : 'text-[9px]'" />
-              </button>
-            </div>
+            <InputNumber
+              v-model="qty"
+              :min="1"
+              show-buttons
+              button-layout="horizontal"
+              increment-button-icon="pi pi-plus"
+              decrement-button-icon="pi pi-minus"
+              class="qty-stepper"
+              :class="{ 'is-sm': !isPC }"
+            />
           </div>
           <span class="text-[#334155]" :class="isPC ? 'text-sm' : 'text-[10px]'">還剩{{ stock ?? 11 }}件</span>
         </div>

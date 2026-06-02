@@ -39,12 +39,12 @@ function cycleCurrency() {
 
 // Mobile/tablet collapsible search
 const mobileSearchOpen = ref(false)
-const mobileSearchInput = ref<HTMLInputElement | null>(null)
+const mobileSearchInput = ref<{ $el?: HTMLElement } | null>(null)
 async function toggleMobileSearch() {
   mobileSearchOpen.value = !mobileSearchOpen.value
   if (mobileSearchOpen.value) {
     await nextTick()
-    mobileSearchInput.value?.focus()
+    mobileSearchInput.value?.$el?.focus()
   }
 }
 
@@ -140,25 +140,16 @@ function pickKeyword(kw: string) {
         <!-- Search bar — PC only -->
         <div class="hidden @4xl:flex flex-col gap-1 flex-1 max-w-[512px] relative">
           <div class="flex h-[42px]">
-            <div class="flex flex-1 items-center bg-white border border-[#cbd5e1] rounded-l-[6px] px-3 gap-2 shadow-[0px_1px_1px_rgba(18,18,23,0.05)]">
-              <i class="pi pi-search text-[#64748b] text-sm" />
-              <input
+            <IconField class="flex-1">
+              <InputIcon class="pi pi-search" />
+              <InputText
                 v-model="keyword"
-                type="text"
                 placeholder="快速搜尋您想找的商品"
-                class="flex-1 text-sm outline-none text-[#334155] placeholder-[#64748b] bg-transparent"
+                class="w-full h-full rounded-r-none"
                 @keyup.enter="runSearch(keyword)"
               />
-            </div>
-            <button
-              class="text-white text-sm font-medium px-4 rounded-r-[6px] transition-colors whitespace-nowrap"
-              style="background: var(--brand-bg); border: 1px solid var(--brand)"
-              @mouseover="($event.target as HTMLElement).style.background = 'var(--brand-hover-bg)'"
-              @mouseleave="($event.target as HTMLElement).style.background = 'var(--brand-bg)'"
-              @click="runSearch(keyword)"
-            >
-              搜尋
-            </button>
+            </IconField>
+            <Button label="搜尋" class="rounded-l-none" @click="runSearch(keyword)" />
           </div>
 
           <!-- Hot search keywords — PC only, only those that fully fit -->
@@ -195,14 +186,14 @@ function pickKeyword(kw: string) {
             class="flex items-center gap-1.5 px-2 @4xl:px-[10.5px] py-2 @4xl:py-[7px] rounded-[6px] hover:bg-gray-100 text-[#334155] text-sm font-medium"
             @click="router.push('/cart')"
           >
-            <span class="relative inline-flex">
+            <OverlayBadge
+              v-if="cart.totalCount > 0"
+              :value="cart.totalCount > 99 ? '99+' : String(cart.totalCount)"
+              class="cart-badge inline-flex"
+            >
               <i class="pi pi-shopping-cart text-base @4xl:text-sm" />
-              <span
-                v-if="cart.totalCount > 0"
-                class="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center leading-none"
-                style="background: var(--accent)"
-              >{{ cart.totalCount > 99 ? '99+' : cart.totalCount }}</span>
-            </span>
+            </OverlayBadge>
+            <i v-else class="pi pi-shopping-cart text-base @4xl:text-sm" />
             <span class="hidden @4xl:inline">購物車</span>
           </button>
 
@@ -238,14 +229,8 @@ function pickKeyword(kw: string) {
 
           <!-- Login / Register OR user menu — tablet+ -->
           <div v-if="!auth.isLoggedIn" class="hidden @4xl:flex items-center">
-            <button
-              class="px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 text-[#334155] text-sm font-medium"
-              @click="router.push('/login')"
-            >登入</button>
-            <button
-              class="px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 text-[#334155] text-sm font-medium"
-              @click="router.push('/register')"
-            >註冊</button>
+            <Button label="登入" severity="secondary" text @click="router.push('/login')" />
+            <Button label="註冊" severity="secondary" text @click="router.push('/register')" />
           </div>
           <div v-else class="hidden @4xl:flex items-center relative" data-user-menu>
             <button
@@ -430,26 +415,17 @@ function pickKeyword(kw: string) {
       <Transition name="msearch">
         <div v-if="mobileSearchOpen" class="@4xl:hidden mt-2 relative" data-msearch>
           <div class="flex h-[38px]">
-            <div class="flex flex-1 items-center bg-white border border-[#cbd5e1] rounded-l-[6px] px-3 gap-2">
-              <i class="pi pi-search text-[#64748b] text-sm" />
-              <input
+            <IconField class="flex-1">
+              <InputIcon class="pi pi-search" />
+              <InputText
                 ref="mobileSearchInput"
                 v-model="keyword"
-                type="text"
                 placeholder="搜尋商品"
-                class="flex-1 text-sm outline-none text-[#334155] placeholder-[#64748b] bg-transparent"
+                class="w-full h-full rounded-r-none"
                 @keyup.enter="runSearch(keyword)"
               />
-            </div>
-            <button
-              class="text-white text-sm font-medium px-3 rounded-r-[6px] transition-colors whitespace-nowrap"
-              style="background: var(--brand-bg); border: 1px solid var(--brand)"
-              @mouseover="($event.target as HTMLElement).style.background = 'var(--brand-hover-bg)'"
-              @mouseleave="($event.target as HTMLElement).style.background = 'var(--brand-bg)'"
-              @click="runSearch(keyword)"
-            >
-              搜尋
-            </button>
+            </IconField>
+            <Button label="搜尋" class="rounded-l-none" @click="runSearch(keyword)" />
           </div>
 
           <!-- Hot search — shown together with the expanded search bar -->
@@ -472,6 +448,15 @@ function pickKeyword(kw: string) {
 </template>
 
 <style scoped>
+/* 購物車數量 badge 縮小 */
+.cart-badge :deep(.p-badge) {
+  font-size: 0.625rem;
+  min-width: 1rem;
+  height: 1rem;
+  line-height: 1rem;
+  padding: 0 0.25rem;
+}
+
 .menu-fade-enter-active,
 .menu-fade-leave-active {
   transition: opacity 0.15s ease, transform 0.15s ease;

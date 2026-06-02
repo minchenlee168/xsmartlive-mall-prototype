@@ -8,6 +8,7 @@ const router = useRouter()
 const auth = useAuthStore()
 const ui = useUiStore()
 
+const countryCodes = ['+886', '+852', '+86']
 const countryCode = ref('+886')
 const phone = ref('')
 const name = ref('')
@@ -43,12 +44,7 @@ function onSubmit() {
             <span class="opacity-90">xSmart</span><span>Live</span>
           </span>
         </button>
-        <button
-          class="flex items-center gap-1.5 px-[10.5px] py-[7px] rounded-[6px] hover:bg-gray-100 text-[var(--surface-700)] text-base font-medium"
-          @click="router.push('/login')"
-        >
-          已有帳號？登入
-        </button>
+        <Button label="已有帳號？登入" severity="secondary" text @click="router.push('/login')" />
       </div>
     </header>
 
@@ -61,64 +57,32 @@ function onSubmit() {
           <div class="flex gap-[10px] items-start">
             <div class="flex flex-col gap-[7px] w-[118px]">
               <label class="text-sm" style="color: var(--surface-700)">國碼</label>
-              <select
-                v-model="countryCode"
-                class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] bg-white outline-none focus:border-[var(--primary)] transition-colors"
-                style="color: var(--surface-700)"
-              >
-                <option value="+886">+886</option>
-                <option value="+852">+852</option>
-                <option value="+86">+86</option>
-              </select>
+              <Select v-model="countryCode" :options="countryCodes" class="w-full" />
             </div>
             <div class="flex-1 flex flex-col gap-[7px]">
               <label class="text-sm" style="color: var(--surface-700)">電話號碼<span style="color:#ef4444"> *</span></label>
-              <input
-                v-model="phone"
-                type="tel"
-                placeholder="請輸入您的電話號碼"
-                class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors bg-white"
-                style="color: var(--surface-700)"
-              />
+              <InputText v-model="phone" type="tel" placeholder="請輸入您的電話號碼" class="w-full" />
             </div>
           </div>
 
           <div class="flex flex-col gap-[7px]">
             <label class="text-sm" style="color: var(--surface-700)">姓名<span style="color:#ef4444"> *</span></label>
-            <input
-              v-model="name"
-              type="text"
-              placeholder="請輸入您的姓名"
-              class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors bg-white"
-              style="color: var(--surface-700)"
-            />
+            <InputText v-model="name" placeholder="請輸入您的姓名" class="w-full" />
           </div>
 
           <div class="flex flex-col gap-[7px]">
             <label class="text-sm" style="color: var(--surface-700)">密碼<span style="color:#ef4444"> *</span></label>
-            <input
-              v-model="password"
-              type="password"
-              placeholder="請設定您的密碼"
-              class="h-[40px] px-3 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors bg-white"
-              style="color: var(--surface-700)"
-            />
+            <Password v-model="password" :feedback="false" toggle-mask placeholder="請設定您的密碼" fluid input-class="w-full" />
           </div>
 
           <div class="flex flex-col gap-[7px]">
             <label class="text-sm" style="color: var(--surface-700)">確認密碼<span style="color:#ef4444"> *</span></label>
-            <input
-              v-model="confirm"
-              type="password"
-              placeholder="請再次輸入密碼"
-              class="h-[40px] px-3 text-sm rounded-[6px] border outline-none transition-colors bg-white"
-              :style="passwordMismatch ? 'border-color:#ef4444; color: var(--surface-700)' : 'border-color:#cbd5e1; color: var(--surface-700)'"
-            />
+            <Password v-model="confirm" :feedback="false" toggle-mask :invalid="passwordMismatch" placeholder="請再次輸入密碼" fluid input-class="w-full" />
             <p v-if="passwordMismatch" class="text-sm" style="color:#ef4444">兩次密碼輸入不一致</p>
           </div>
 
           <label class="flex items-start gap-2 cursor-pointer">
-            <input v-model="agreed" type="checkbox" class="mt-1 w-[17px] h-[17px] accent-[var(--primary)]" />
+            <Checkbox v-model="agreed" binary input-id="reg-agree" class="mt-1" />
             <span class="text-sm" style="color: var(--surface-700)">
               我同意直播管家購物小幫手
               <a class="underline cursor-pointer" style="color: var(--primary)" @click.prevent="router.push('/terms')">服務政策</a>
@@ -128,14 +92,7 @@ function onSubmit() {
           </label>
           <p v-if="submitted && !agreed" class="text-sm -mt-2" style="color:#ef4444">請先同意服務條款與隱私政策</p>
 
-          <button
-            type="submit"
-            :disabled="!canSubmit"
-            class="w-full py-[14px] rounded-[6px] text-[16px] font-medium text-[#f0f4f7] transition-colors mt-1"
-            :style="canSubmit ? 'background: var(--primary-bg); cursor:pointer' : 'background:#949494; cursor:not-allowed'"
-          >
-            建立帳號
-          </button>
+          <Button type="submit" :disabled="!canSubmit" label="建立帳號" class="w-full mt-1" />
         </form>
       </div>
     </main>

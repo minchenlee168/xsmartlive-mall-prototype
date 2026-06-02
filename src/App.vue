@@ -41,6 +41,10 @@ const isConstrained = computed(() => !!viewportStore.current.width)
 
   <FloatingControls />
 
+  <!-- PrimeVue 全域 Toast -->
+  <Toast />
+
+
   <!-- Global toast -->
   <Transition name="ui-toast">
     <div
