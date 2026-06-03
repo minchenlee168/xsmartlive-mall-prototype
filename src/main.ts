@@ -35,6 +35,7 @@ import InputGroup from 'primevue/inputgroup'
 import InputGroupAddon from 'primevue/inputgroupaddon'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
+import Paginator from 'primevue/paginator'
 
 // 橋接：把 Aura 的 primary semantic token 對應到既有 CSS 變數，
 // 讓執行時的 8 套主題切換器（theme.ts 寫 documentElement.style）也能
@@ -118,5 +119,6 @@ app.component('InputGroup', InputGroup)
 app.component('InputGroupAddon', InputGroupAddon)
 app.component('IconField', IconField)
 app.component('InputIcon', InputIcon)
+app.component('Paginator', Paginator)
 
 app.mount('#app')

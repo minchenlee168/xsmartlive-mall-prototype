@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
@@ -22,38 +22,20 @@ const gridCols = computed(() => ({
   'grid-cols-5': vp.value === 'pc',
 }))
 
-// 主題館的完整商品清單 — 原型用既有資料重複堆疊出較長的列表，方便展示無限捲動
+// 主題館的完整商品清單 — 原型用既有資料重複堆疊出較長的列表，方便展示分頁
 const feed = Array.from({ length: 5 }, (_, page) =>
   products.map((p) => ({ ...p, key: `${p.id}-${page}` })),
 ).flat()
 
+// 分頁：一頁 10 個，超過顯示分頁器
 const PAGE_SIZE = 10
-const visibleCount = ref(PAGE_SIZE)
-const loading = ref(false)
-const visibleProducts = computed(() => feed.slice(0, visibleCount.value))
-const hasMore = computed(() => visibleCount.value < feed.length)
+const first = ref(0)
+const pagedProducts = computed(() => feed.slice(first.value, first.value + PAGE_SIZE))
 
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | null = null
-
-function loadMore() {
-  if (loading.value || !hasMore.value) return
-  loading.value = true
-  // 模擬非同步載入延遲
-  setTimeout(() => {
-    visibleCount.value = Math.min(visibleCount.value + PAGE_SIZE, feed.length)
-    loading.value = false
-  }, 800)
+function onPage(e: { first: number }) {
+  first.value = e.first
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
-
-onMounted(() => {
-  observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) loadMore()
-  }, { rootMargin: '200px' })
-  if (sentinel.value) observer.observe(sentinel.value)
-})
-
-onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
@@ -86,7 +68,7 @@ onBeforeUnmount(() => observer?.disconnect())
         <div class="flex flex-col gap-4">
           <div class="grid gap-3" :class="gridCols">
             <ProductCard
-              v-for="p in visibleProducts"
+              v-for="p in pagedProducts"
               :key="p.key"
               :id="p.id"
               :name="p.name"
@@ -99,15 +81,14 @@ onBeforeUnmount(() => observer?.disconnect())
             />
           </div>
 
-          <!-- 無限捲動：捲到底部觸發載入，載入中顯示 loading -->
-          <div ref="sentinel" class="flex items-center justify-center h-[6.25rem] @lg:h-[7.5rem]">
-            <div
-              v-if="loading"
-              class="w-10 h-10 @lg:w-12 @lg:h-12 rounded-full animate-spin"
-              style="border: 0.25rem solid var(--primary-200); border-top-color: var(--primary)"
-            />
-            <p v-else-if="!hasMore" class="text-sm text-[#94a3b8]">沒有更多商品了</p>
-          </div>
+          <!-- 分頁器：商品超過一頁 10 個時顯示 -->
+          <Paginator
+            v-if="feed.length > PAGE_SIZE"
+            :first="first"
+            :rows="PAGE_SIZE"
+            :total-records="feed.length"
+            @page="onPage"
+          />
         </div>
 
       </div>

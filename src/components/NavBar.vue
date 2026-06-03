@@ -5,6 +5,8 @@ import { useAuthStore } from '../stores/auth'
 import { useCartStore } from '../stores/cart'
 import { useUiStore } from '../stores/ui'
 import { usePrefsStore, type Currency, type Language } from '../stores/prefs'
+import walletIcon from '../assets/wallet.svg'
+import couponIcon from '../assets/coupon.svg'
 
 const keyword = ref('')
 const router = useRouter()
@@ -27,14 +29,16 @@ function pickLanguage(l: Language) {
   ui.toast(`語言已切換為 ${l.label}`)
 }
 
-// Currency cycle
-function cycleCurrency() {
-  const list = prefs.currencies
-  const idx = list.findIndex(c => c.code === prefs.currency.code)
-  const next = list[(idx + 1) % list.length] as Currency
-  prefs.setCurrency(next)
+// Currency picker dialog
+const currencyDialogOpen = ref(false)
+function openCurrencyDialog() {
   userMenuOpen.value = false
-  ui.toast(`貨幣已切換為 ${next.label}（${next.code}）`)
+  currencyDialogOpen.value = true
+}
+function pickCurrency(c: Currency) {
+  prefs.setCurrency(c)
+  currencyDialogOpen.value = false
+  ui.toast(`貨幣已切換為 ${c.label}（${c.code}）`)
 }
 
 // Mobile/tablet collapsible search
@@ -248,63 +252,72 @@ function pickKeyword(kw: string) {
             <Transition name="menu-fade">
               <div
                 v-if="userMenuOpen"
-                class="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-[#e2e8f0] py-2 z-50"
+                class="absolute right-0 top-full mt-2 w-[260px] bg-white rounded-[6px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-[#e2e8f0] p-[3.5px] z-50"
                 @click.stop
               >
                 <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="userMenuOpen = false; router.push('/member')"
                 >
-                  <i class="pi pi-user text-[#334155]" />
-                  <span class="text-sm text-[#334155]">會員中心</span>
+                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
+                    <i class="pi pi-user text-sm text-[#334155]" />
+                    <span class="font-medium text-[16px] text-[#334155]">會員中心</span>
+                  </span>
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
-                  @click="cycleCurrency"
+                  class="w-full flex items-center gap-[7px] px-[10.5px] py-[7px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  @click="openCurrencyDialog"
                 >
-                  <div class="flex flex-col">
-                    <span class="text-sm text-[#334155]">貨幣</span>
-                    <span class="text-xs text-[#64748b]">{{ prefs.currency.symbol }} - {{ prefs.currency.code }} - {{ prefs.currency.label }}</span>
-                  </div>
-                  <i class="pi pi-cog text-[#64748b]" />
+                  <span class="flex-1 flex flex-col gap-1 pl-[14px]">
+                    <span class="font-medium text-[16px] leading-none text-[#334155]">貨幣</span>
+                    <span class="text-[16px] leading-none text-[#334155]">{{ prefs.currency.symbol }} - <span style="color: var(--primary)">{{ prefs.currency.code }}</span> - {{ prefs.currency.label }}</span>
+                  </span>
+                  <i class="pi pi-cog text-sm text-[#334155]" />
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
-                  <div class="flex items-center gap-3">
-                    <i class="pi pi-wallet" style="color: var(--primary)" />
-                    <span class="text-sm text-[#334155]">紅利點數</span>
-                  </div>
-                  <span class="text-sm font-medium" style="color: var(--primary)">{{ auth.rewardPoints.toFixed(2) }}</span>
+                  <span class="flex-1 flex items-center justify-between pl-[14px]">
+                    <span class="flex items-center gap-1">
+                      <img :src="walletIcon" alt="" class="w-[26px] h-[26px] shrink-0" />
+                      <span class="font-medium text-[16px] text-[#334155]">紅利點數</span>
+                    </span>
+                    <span class="font-medium text-[14px]" style="color: var(--primary)">{{ auth.rewardPoints.toFixed(2) }}</span>
+                  </span>
                 </button>
                 <button
-                  class="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
-                  <div class="flex items-center gap-3">
-                    <i class="pi pi-gift" style="color: var(--primary)" />
-                    <span class="text-sm text-[#334155]">優惠券</span>
-                  </div>
-                  <span class="text-sm font-medium" style="color: var(--primary)">{{ auth.couponCount }} <span class="text-[#64748b] font-normal">/張</span></span>
+                  <span class="flex-1 flex items-center justify-between pl-[14px]">
+                    <span class="flex items-center gap-2">
+                      <img :src="couponIcon" alt="" class="w-[26px] h-[26px] shrink-0" />
+                      <span class="font-medium text-[16px] text-[#334155]">優惠券</span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <span class="font-medium text-[14px]" style="color: var(--primary)">{{ auth.couponCount }}</span>
+                      <span class="text-[16px] text-[#334155]">/張</span>
+                    </span>
+                  </span>
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
-                  <i class="pi pi-file text-[#334155]" />
-                  <span class="text-sm text-[#334155]">歷史訂單</span>
+                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
+                    <i class="pi pi-file text-sm text-[#334155]" />
+                    <span class="font-medium text-[16px] text-[#334155]">歷史訂單</span>
+                  </span>
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] hover:bg-gray-50 transition-colors text-left"
                   @click="onLogout"
                 >
-                  <i class="pi pi-sign-out text-[#334155]" />
-                  <span class="text-sm text-[#334155]">登出</span>
+                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
+                    <i class="pi pi-sign-out text-sm text-[#334155]" />
+                    <span class="font-medium text-[16px] text-[#334155]">登出</span>
+                  </span>
                 </button>
               </div>
             </Transition>
@@ -346,63 +359,72 @@ function pickKeyword(kw: string) {
             <Transition name="menu-fade">
               <div
                 v-if="auth.isLoggedIn && userMenuOpen"
-                class="absolute right-0 top-full mt-2 w-[240px] bg-white rounded-[8px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-[#e2e8f0] py-2 z-50"
+                class="absolute right-0 top-full mt-2 w-[260px] bg-white rounded-[6px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-[#e2e8f0] p-[3.5px] z-50"
                 @click.stop
               >
                 <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="userMenuOpen = false; router.push('/member')"
                 >
-                  <i class="pi pi-user text-[#334155]" />
-                  <span class="text-sm text-[#334155]">會員中心</span>
+                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
+                    <i class="pi pi-user text-sm text-[#334155]" />
+                    <span class="font-medium text-[16px] text-[#334155]">會員中心</span>
+                  </span>
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
-                  @click="cycleCurrency"
+                  class="w-full flex items-center gap-[7px] px-[10.5px] py-[7px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
+                  @click="openCurrencyDialog"
                 >
-                  <div class="flex flex-col">
-                    <span class="text-sm text-[#334155]">貨幣</span>
-                    <span class="text-xs text-[#64748b]">{{ prefs.currency.symbol }} - {{ prefs.currency.code }} - {{ prefs.currency.label }}</span>
-                  </div>
-                  <i class="pi pi-cog text-[#64748b]" />
+                  <span class="flex-1 flex flex-col gap-1 pl-[14px]">
+                    <span class="font-medium text-[16px] leading-none text-[#334155]">貨幣</span>
+                    <span class="text-[16px] leading-none text-[#334155]">{{ prefs.currency.symbol }} - <span style="color: var(--primary)">{{ prefs.currency.code }}</span> - {{ prefs.currency.label }}</span>
+                  </span>
+                  <i class="pi pi-cog text-sm text-[#334155]" />
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
-                  <div class="flex items-center gap-3">
-                    <i class="pi pi-wallet" style="color: var(--primary)" />
-                    <span class="text-sm text-[#334155]">紅利點數</span>
-                  </div>
-                  <span class="text-sm font-medium" style="color: var(--primary)">{{ auth.rewardPoints.toFixed(2) }}</span>
+                  <span class="flex-1 flex items-center justify-between pl-[14px]">
+                    <span class="flex items-center gap-1">
+                      <img :src="walletIcon" alt="" class="w-[26px] h-[26px] shrink-0" />
+                      <span class="font-medium text-[16px] text-[#334155]">紅利點數</span>
+                    </span>
+                    <span class="font-medium text-[14px]" style="color: var(--primary)">{{ auth.rewardPoints.toFixed(2) }}</span>
+                  </span>
                 </button>
                 <button
-                  class="w-full flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
-                  <div class="flex items-center gap-3">
-                    <i class="pi pi-gift" style="color: var(--primary)" />
-                    <span class="text-sm text-[#334155]">優惠券</span>
-                  </div>
-                  <span class="text-sm font-medium" style="color: var(--primary)">{{ auth.couponCount }} <span class="text-[#64748b] font-normal">/張</span></span>
+                  <span class="flex-1 flex items-center justify-between pl-[14px]">
+                    <span class="flex items-center gap-2">
+                      <img :src="couponIcon" alt="" class="w-[26px] h-[26px] shrink-0" />
+                      <span class="font-medium text-[16px] text-[#334155]">優惠券</span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <span class="font-medium text-[14px]" style="color: var(--primary)">{{ auth.couponCount }}</span>
+                      <span class="text-[16px] text-[#334155]">/張</span>
+                    </span>
+                  </span>
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
                   @click="goMember"
                 >
-                  <i class="pi pi-file text-[#334155]" />
-                  <span class="text-sm text-[#334155]">歷史訂單</span>
+                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
+                    <i class="pi pi-file text-sm text-[#334155]" />
+                    <span class="font-medium text-[16px] text-[#334155]">歷史訂單</span>
+                  </span>
                 </button>
-                <div class="border-t border-[#e2e8f0] my-1" />
                 <button
-                  class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                  class="w-full flex items-center h-[50px] px-[10.5px] hover:bg-gray-50 transition-colors text-left"
                   @click="onLogout"
                 >
-                  <i class="pi pi-sign-out text-[#334155]" />
-                  <span class="text-sm text-[#334155]">登出</span>
+                  <span class="flex-1 flex items-center gap-2 pl-[14px]">
+                    <i class="pi pi-sign-out text-sm text-[#334155]" />
+                    <span class="font-medium text-[16px] text-[#334155]">登出</span>
+                  </span>
                 </button>
               </div>
             </Transition>
@@ -444,6 +466,25 @@ function pickKeyword(kw: string) {
       </Transition>
 
     </div>
+
+    <!-- 選擇貨幣彈窗 -->
+    <Dialog v-model:visible="currencyDialogOpen" modal header="選擇貨幣" :style="{ width: '22rem' }" :draggable="false">
+      <div class="flex flex-col gap-1">
+        <button
+          v-for="c in prefs.currencies"
+          :key="c.code"
+          class="w-full flex items-center justify-between px-3 py-3 rounded-[6px] transition-colors text-left"
+          :class="c.code === prefs.currency.code ? '' : 'hover:bg-gray-50'"
+          :style="c.code === prefs.currency.code ? 'background: var(--primary-surface)' : ''"
+          @click="pickCurrency(c)"
+        >
+          <span class="text-sm text-[#334155]">
+            {{ c.symbol }} - <span :style="c.code === prefs.currency.code ? 'color: var(--primary)' : ''">{{ c.code }}</span> - {{ c.label }}
+          </span>
+          <i v-if="c.code === prefs.currency.code" class="pi pi-check" style="color: var(--primary)" />
+        </button>
+      </div>
+    </Dialog>
   </header>
 </template>
 
