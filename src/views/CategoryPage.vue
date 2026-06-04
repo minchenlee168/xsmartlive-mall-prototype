@@ -40,7 +40,7 @@ const pageProducts = products
             <i class="pi pi-home text-xs" />
           </button>
           <i class="pi pi-chevron-right text-[10px] text-[#94a3b8]" />
-          <span style="color: var(--primary)" class="font-medium">{{ tab }}</span>
+          <span class="font-medium text-[#64748b]">{{ tab }}</span>
           <template v-if="activeSubCategory">
             <i class="pi pi-chevron-right text-[10px] text-[#94a3b8]" />
             <span class="text-[#64748b]">{{ activeSubCategory }}</span>

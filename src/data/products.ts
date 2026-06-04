@@ -21,8 +21,8 @@ export interface Product {
 }
 
 export const products: Product[] = [
-  { id: 1,  name: '韓版秋冬女童泡泡袖針織洋裝 保暖舒適百搭款',          price: 350, original: 500, hasVariant: false, stock: 11, sizes: ['90cm','100cm','110cm','120cm'], category: '寶寶包屁', image: 'https://images.unsplash.com/photo-1590005024862-6b67679a29fb?w=600&fit=crop' },
-  { id: 2,  name: '男童純棉長袖上衣 撞色條紋圓領T',                     price: 280, original: 420, hasVariant: true,  stock: 8,  sizes: ['S','M','L','XL'],             category: '大童童裝',  image: 'https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&fit=crop' },
+  { id: 1,  name: '韓版秋冬女童泡泡袖針織洋裝 保暖舒適百搭款',          price: 350, original: 500, hasVariant: false, stock: 11, sizes: ['90cm','100cm','110cm','120cm'], category: '寶寶包屁' },
+  { id: 2,  name: '男童純棉長袖上衣 撞色條紋圓領T',                     price: 280, original: 420, hasVariant: true,  stock: 8,  sizes: ['S','M','L','XL'],             category: '大童童裝' },
   { id: 3,  name: '寶寶連身包屁衣 有機棉長袖春秋款 0-18個月',           price: 199, original: 320, hasVariant: true,  stock: 15, sizes: ['66cm','73cm','80cm','90cm'],    category: '寶寶包屁', image: 'https://images.unsplash.com/photo-1596870230751-ebdfce98ec42?w=600&fit=crop' },
   { id: 4,  name: '親子裝母女裝秋冬新款格紋棉麻長裙套裝',               price: 890, original: 1200, hasVariant: false, stock: 5, sizes: ['S','M','L'],                  category: '親子裝',   image: 'https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=600&fit=crop', noCoupon: true },
   { id: 5,  name: '女童蕾絲公主裙 春夏薄款蓬蓬裙禮服',                  price: 450, original: 680, hasVariant: false, stock: 8,  sizes: ['100cm','110cm','120cm','130cm'], category: '小童童裝', image: 'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&fit=crop' },

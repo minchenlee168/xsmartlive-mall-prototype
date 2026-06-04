@@ -53,7 +53,7 @@ function onPage(e: { first: number }) {
             <i class="pi pi-home text-xs" />
           </button>
           <i class="pi pi-chevron-right text-[0.625rem] text-[#94a3b8]" />
-          <span style="color: var(--primary)" class="font-medium">{{ hallTitle }}</span>
+          <span class="font-medium text-[#64748b]">{{ hallTitle }}</span>
         </nav>
 
         <!-- Title -->

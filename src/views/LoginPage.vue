@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useUiStore } from '../stores/ui'
 
@@ -21,13 +21,17 @@ const RECAPTCHA_SITEKEY = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI'
 const RECAPTCHA_SCRIPT_ID = 'recaptcha-v2-script'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const ui = useUiStore()
+
+// 登入成功後導向的目的地（由 redirect query 指定，預設首頁）
+const redirectTo = () => (route.query.redirect as string) || '/'
 
 function socialLogin(provider: string) {
   auth.login()
   ui.toast(`已使用 ${provider} 登入`)
-  router.push('/')
+  router.push(redirectTo())
 }
 
 const countryCodes = ['+886', '+852', '+853', '+86']
@@ -78,7 +82,7 @@ function onSubmit() {
   submitted.value = true
   if (!canSubmit.value) return
   auth.login()
-  router.push('/')
+  router.push(redirectTo())
 }
 </script>
 

@@ -12,6 +12,7 @@ import RegisterPage from '../views/RegisterPage.vue'
 import ForgotPasswordPage from '../views/ForgotPasswordPage.vue'
 import InfoPage from '../views/InfoPage.vue'
 import { useUiStore } from '../stores/ui'
+import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,9 +37,17 @@ const router = createRouter({
   },
 })
 
+// 需登入才能進入的頁面
+const AUTH_REQUIRED = ['/cart', '/checkout']
+
 // 換頁 loading：切換路徑時顯示載入畫面，最少顯示一小段時間才看得到
 let loadingTimer: ReturnType<typeof setTimeout> | null = null
 router.beforeEach((to, from) => {
+  // 未登入時，購物車／結帳導向登入頁（並記住目的地）
+  if (AUTH_REQUIRED.includes(to.path) && !useAuthStore().isLoggedIn) {
+    useUiStore().toast('請先登入會員')
+    return { path: '/login', query: { redirect: to.fullPath } }
+  }
   if (to.path !== from.path) {
     if (loadingTimer) clearTimeout(loadingTimer)
     useUiStore().setRouteLoading(true)

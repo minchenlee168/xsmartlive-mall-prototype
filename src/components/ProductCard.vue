@@ -49,8 +49,9 @@ function onPrimaryAction(e: MouseEvent) {
     <!-- Product image -->
     <div class="aspect-[332/320] w-full bg-gray-100 overflow-hidden" :class="isPC ? 'rounded-[8px]' : 'rounded-[6px]'">
       <img v-if="image" :src="image" :alt="name" class="w-full h-full object-cover" />
-      <div v-else class="w-full h-full flex items-center justify-center text-gray-300">
-        <i class="pi pi-image" :class="isPC ? 'text-4xl' : 'text-3xl'" />
+      <div v-else class="w-full h-full flex flex-col items-center justify-center gap-1.5">
+        <i class="pi pi-hammer text-gray-300" :class="isPC ? 'text-4xl' : 'text-3xl'" />
+        <span class="text-gray-400" :class="isPC ? 'text-sm' : 'text-[10px]'">圖片施工中</span>
       </div>
     </div>
 

@@ -60,14 +60,12 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
           <!-- 從主題館進來：中間段顯示「返回」回上一頁 -->
           <button
             v-if="fromTheme"
-            style="color: var(--primary)"
-            class="font-medium hover:underline"
+            class="font-medium text-[#64748b] hover:underline"
             @click="router.back()"
           >返回</button>
           <button
             v-else-if="product.category"
-            style="color: var(--primary)"
-            class="font-medium hover:underline"
+            class="font-medium text-[#64748b] hover:underline"
             @click="router.push(`/category/${encodeURIComponent(product.category!)}`)"
           >{{ product.category }}</button>
           <i class="pi pi-chevron-right text-[10px] text-[#94a3b8]" />
@@ -85,7 +83,10 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
               <div class="w-full bg-[#d9d9d9] rounded-[8px] overflow-hidden flex items-center justify-center"
                    :class="isPC ? 'h-[512px]' : isMobile ? 'h-[280px]' : 'h-[320px]'">
                 <img v-if="product.image" :src="product.image" :alt="product.name" class="w-full h-full object-cover" />
-                <i v-else class="pi pi-image text-[#aaa]" :class="isPC ? 'text-6xl' : 'text-5xl'" />
+                <div v-else class="flex flex-col items-center justify-center gap-2">
+                  <i class="pi pi-hammer text-gray-400" :class="isPC ? 'text-6xl' : 'text-5xl'" />
+                  <span class="text-sm text-gray-400">圖片施工中</span>
+                </div>
               </div>
 
               <!-- Thumbnails -->

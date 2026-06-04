@@ -85,7 +85,9 @@ const groups: Group[] = [
 const expandedBundles = ref<Record<string, boolean>>({ c1: true, c4: true })
 function toggleBundle(id: string) { expandedBundles.value[id] = !expandedBundles.value[id] }
 
-const groupSubtotal = (g: Group) => g.items.reduce((s, i) => s + i.price * i.qty, 0)
+// 結帳頁不分賣場，攤平成單一商品明細
+const allItems = groups.flatMap(g => g.items)
+const itemsSubtotal = allItems.reduce((s, i) => s + i.price * i.qty, 0)
 
 // Form state
 const couponCode = ref('')
@@ -312,19 +314,15 @@ const totalSaved = computed(() =>
         </div>
       </section>
 
-      <!-- Item groups -->
-      <section
-        v-for="group in groups"
-        :key="group.id"
-        class="bg-white rounded-[12px] shadow-card"
-      >
-        <div class="px-[16px] py-[10.5px]">
-          <span class="font-medium text-[#334155]">{{ group.sellerName }}</span>
+      <!-- 商品明細（不分賣場，單一列表） -->
+      <section class="bg-white rounded-[12px] shadow-card">
+        <div class="px-[16px] py-[10.5px] cart-divider">
+          <span class="font-medium text-[#334155]">商品明細</span>
         </div>
         <div
-          v-for="(item, ii) in group.items"
+          v-for="(item, ii) in allItems"
           :key="item.id"
-          :class="ii !== group.items.length - 1 ? 'cart-divider' : ''"
+          :class="ii !== allItems.length - 1 ? 'cart-divider' : ''"
         >
           <div class="flex items-start gap-4 px-[16px] py-[10.5px]">
             <div class="shrink-0 w-[80px] h-[80px] bg-[#d9d9d9] rounded-[4px] overflow-hidden">
@@ -364,8 +362,8 @@ const totalSaved = computed(() =>
         </div>
 
         <div class="cart-divider-top flex items-center justify-end gap-4 px-[16px] py-[14px]">
-          <span class="text-[14px] text-[#334155]">訂單金額小計 ({{ group.items.length }}個商品)</span>
-          <span class="text-[24px] font-bold" style="color: var(--primary)">${{ groupSubtotal(group).toLocaleString() }}</span>
+          <span class="text-[14px] text-[#334155]">訂單金額小計 ({{ allItems.length }}個商品)</span>
+          <span class="text-[24px] font-bold" style="color: var(--primary)">${{ itemsSubtotal.toLocaleString() }}</span>
         </div>
       </section>
 
