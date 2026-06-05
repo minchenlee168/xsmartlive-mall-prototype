@@ -11,6 +11,7 @@ export interface CartBundleItem {
 
 export interface CartItem {
   id: string
+  productId?: number      // 對應商品目錄 id，可導向商品內頁
   name: string
   image?: string
   spec: string
@@ -40,8 +41,8 @@ export const useCartStore = defineStore('cart', () => {
       tags: [{ label: '低溫配送', type: 'info' }],
       items: [
         {
-          id: 'i1',
-          name: '新款組合 包屁衣韓版小洋裝雙件組（若是超過一行會顯示點點點）',
+          id: 'i1', productId: 13,
+          name: '新款組合 包屁衣韓版小洋裝雙件組',
           image: products.find(p => p.id === 13)?.image,
           spec: '66cm,紫色', qty: 1, price: 290, original: 350,
           checked: true, isBundle: true, bundleExpanded: true,
@@ -51,15 +52,15 @@ export const useCartStore = defineStore('cart', () => {
           ],
         },
         {
-          id: 'i2',
-          name: '韓版秋冬女童泡泡袖針織洋裝 保暖舒適百搭款（若是超過一行會顯示點點點）',
+          id: 'i2', productId: 1,
+          name: '韓版秋冬女童泡泡袖針織洋裝 保暖舒適百搭款',
           image: products.find(p => p.id === 1)?.image,
           spec: '110cm', qty: 1, price: 350, original: 500,
           checked: true,
         },
         {
-          id: 'i3',
-          name: '嬰兒連帽爬服 卡通印花長袖爬爬服（若是超過一行會顯示點點點）',
+          id: 'i3', productId: 7,
+          name: '嬰兒連帽爬服 卡通印花長袖爬爬服',
           image: products.find(p => p.id === 7)?.image,
           spec: '66cm', qty: 1, price: 169, original: 250,
           checked: true,
@@ -75,7 +76,7 @@ export const useCartStore = defineStore('cart', () => {
       ],
       items: [
         {
-          id: 'i4',
+          id: 'i4', productId: 13,
           name: '新款組合 包屁衣韓版小洋裝雙件組',
           image: products.find(p => p.id === 13)?.image,
           spec: '66cm', qty: 1, price: 290, original: 350,
@@ -86,8 +87,8 @@ export const useCartStore = defineStore('cart', () => {
           ],
         },
         {
-          id: 'i5',
-          name: '限量 MM巧克力男寶寶搞怪包屁衣（若是超過一行會顯示點點點）',
+          id: 'i5', productId: 7,
+          name: '限量 MM巧克力男寶寶搞怪包屁衣',
           image: products.find(p => p.id === 7)?.image,
           spec: '66cm,藍色', qty: 1, price: 300,
           checked: false,
@@ -101,12 +102,24 @@ export const useCartStore = defineStore('cart', () => {
   )
 
   function addItem(p: { id: number; name: string; price: number; original?: number; image?: string }, spec = '預設', qty = 1) {
-    if (groups.value.length === 0) {
-      groups.value.push({ id: Date.now(), sellerName: '我的商店', tags: [], items: [] })
+    // 加入的商品一律放進第一台「可刪除」（未禁止棄標）的購物車；沒有就新建一台放最前面
+    let target = groups.value.find(g => !g.tags.some(t => t.label === '禁止棄標'))
+    if (!target) {
+      target = { id: Date.now(), sellerName: '我的商店', tags: [], items: [] }
+      groups.value.unshift(target)
     }
-    const target = groups.value[0]
+    // 同商品（同 productId）且同規格 → 合併累加數量，不另開一列
+    const existing = target.items.find(i => i.productId === p.id && i.spec === spec)
+    if (existing) {
+      existing.qty += qty
+      existing.checked = true
+      return
+    }
+    // 依商品 id 從商品目錄補齊組合商品內容，確保購物車與商品頁吻合
+    const cat = products.find(pr => pr.id === p.id)
     target.items.push({
       id: `i_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+      productId: p.id,
       name: p.name,
       image: p.image,
       spec,
@@ -114,6 +127,9 @@ export const useCartStore = defineStore('cart', () => {
       price: p.price,
       original: p.original,
       checked: true,
+      isBundle: cat?.isBundle,
+      bundleExpanded: cat?.isBundle ? true : undefined,
+      bundleItems: cat?.bundleItems,
     })
   }
 

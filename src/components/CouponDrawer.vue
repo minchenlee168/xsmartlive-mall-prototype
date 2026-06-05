@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useViewportStore } from '../stores/viewport'
+
 const visible = defineModel<boolean>('visible', { default: false })
+
+const viewportStore = useViewportStore()
+// 電腦版固定 680px；手機／平板符合容器寬度
+const drawerWidth = computed(() => `${viewportStore.current.width ?? 680}px`)
 
 interface Coupon {
   id: number
@@ -15,9 +22,9 @@ interface Coupon {
 const coupons: Coupon[] = [
   {
     id: 1,
-    discount: '折300',
+    discount: '折100',
     name: '滿千折百優惠券（滿1000元使用）',
-    description: '活動訂單滿 $1000 現折 $300',
+    description: '活動訂單滿 $1000 現折 $100',
     tagText: '適用範圍（直播場次）：我是直播場次-2025-12-24',
     tagType: 'danger',
     expiry: '有效期限至 2026.01.20 23:00',
@@ -26,7 +33,7 @@ const coupons: Coupon[] = [
     id: 2,
     discount: '50%',
     name: '滿千五折（滿1000元使用）',
-    description: '活動訂單滿 $5000 打5折',
+    description: '活動訂單滿 $1000 打5折',
     tagText: '適用範圍(粉絲團貼文)：我是粉絲團貼文-2025-12-24',
     tagType: 'info',
     expiry: '有效期限至 2026.01.20 23:00',
@@ -34,8 +41,8 @@ const coupons: Coupon[] = [
   {
     id: 3,
     discount: '折300',
-    name: '滿千折三百（滿1000元使用）',
-    description: '新客首單滿 $499 現折 $50',
+    name: '滿三千折三百（滿3000元使用）',
+    description: '常客單筆滿 $3000 現折 $300',
     tagText: '適用範圍：全站',
     tagType: 'secondary',
     expiry: '有效期限至 2026.01.20 23:00',
@@ -49,7 +56,7 @@ const coupons: Coupon[] = [
     v-model:visible="visible"
     position="bottom"
     header="可使用優惠券"
-    :style="{ height: 'auto', maxHeight: '80vh' }"
+    :style="{ width: drawerWidth, maxWidth: '100vw', left: 0, right: 0, margin: '0 auto', height: 'auto', maxHeight: '80vh' }"
   >
     <!-- Coupon list -->
     <div class="max-w-[680px] mx-auto flex flex-col">

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useViewportStore } from '../stores/viewport'
 import { useCartStore } from '../stores/cart'
+import { useUiStore } from '../stores/ui'
 
 const props = defineProps<{
   id: number
@@ -21,6 +22,7 @@ const props = defineProps<{
 
 const router = useRouter()
 const cart = useCartStore()
+const ui = useUiStore()
 
 const qty = ref(1)
 const vp = computed(() => useViewportStore().current.id)
@@ -36,6 +38,7 @@ function onPrimaryAction(e: MouseEvent) {
     goDetail()
   } else {
     cart.addItem({ id: props.id, name: props.name, price: props.price, original: props.original, image: props.image }, '預設', qty.value)
+    ui.toast('已加入購物車')
   }
 }
 </script>

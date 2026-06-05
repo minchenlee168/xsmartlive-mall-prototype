@@ -6,10 +6,12 @@ import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiStore } from '../stores/ui'
+import { useOrdersStore } from '../stores/orders'
 
 const router = useRouter()
 const auth = useAuthStore()
 const ui = useUiStore()
+const ordersStore = useOrdersStore()
 
 function editProfile() {
   activeNav.value = 'account'
@@ -59,7 +61,15 @@ const snapshot = reactive({
 // Profile form
 const name = ref(snapshot.name)
 const gender = ref<'male' | 'female' | 'other'>(snapshot.gender)
-const birthday = ref(snapshot.birthday)
+// 生日：以 Date 物件供 DatePicker 使用；與 snapshot 的 'YYYY-MM-DD' 字串互轉
+function parseDate(s: string) {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+function fmtDate(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const birthday = ref<Date>(parseDate(snapshot.birthday))
 
 // Phone form
 const phoneCode = ref(snapshot.phoneCode)
@@ -73,7 +83,7 @@ const email = ref(snapshot.email)
 const profileDirty = computed(() =>
   name.value !== snapshot.name ||
   gender.value !== snapshot.gender ||
-  birthday.value !== snapshot.birthday
+  fmtDate(birthday.value) !== snapshot.birthday
 )
 const phoneDirty = computed(() =>
   phoneCode.value !== snapshot.phoneCode ||
@@ -85,7 +95,7 @@ function saveProfile() {
   if (!profileDirty.value) return
   snapshot.name = name.value
   snapshot.gender = gender.value
-  snapshot.birthday = birthday.value
+  snapshot.birthday = fmtDate(birthday.value)
 }
 function savePhone() {
   if (!phoneDirty.value) return
@@ -153,6 +163,18 @@ const currentAddrs = computed(() => addressTab.value === 'home' ? homeAddrs.valu
 function setDefaultAddr(id: string) {
   currentAddrs.value.forEach(a => { a.isDefault = a.id === id })
 }
+// 刪除地址前先確認
+const deleteConfirmOpen = ref(false)
+const pendingDeleteId = ref<string | null>(null)
+function askDeleteAddr(id: string) {
+  pendingDeleteId.value = id
+  deleteConfirmOpen.value = true
+}
+function confirmDeleteAddr() {
+  if (pendingDeleteId.value) deleteAddr(pendingDeleteId.value)
+  deleteConfirmOpen.value = false
+  pendingDeleteId.value = null
+}
 function deleteAddr(id: string) {
   const list = addressTab.value === 'home' ? homeAddrs : storeAddrs
   const wasDefault = list.value.find(a => a.id === id)?.isDefault
@@ -160,14 +182,11 @@ function deleteAddr(id: string) {
   if (wasDefault && list.value.length > 0 && !list.value.some(a => a.isDefault)) {
     list.value[0].isDefault = true
   }
+  ui.toast(addressTab.value === 'home' ? '宅配地址已刪除' : '超商門市已刪除')
 }
 
-// Nav-level content mock data
-const myOrders = [
-  { id: 'SO20260512001', date: '2026-05-12', status: '已出貨', total: 1936, items: 3 },
-  { id: 'SO20260430017', date: '2026-04-30', status: '已完成', total: 688, items: 1 },
-  { id: 'SO20260418009', date: '2026-04-18', status: '已完成', total: 1290, items: 2 },
-]
+// Nav-level content（我的訂單／交易記錄查詢來自 orders store，付款完成會即時同步）
+const myOrders = computed(() => ordersStore.myOrders)
 interface PointRecord {
   type: 'earn' | 'deduct'
   title: string
@@ -197,11 +216,7 @@ function usePoints() {
   ui.toast('已前往購物車，可於結帳折抵紅利點數')
   router.push('/cart')
 }
-const transactions = [
-  { date: '2026-05-12', method: '線上信用卡', orderId: 'SO20260512001', amount: 1936 },
-  { date: '2026-04-30', method: 'ATM 轉帳', orderId: 'SO20260430017', amount: 688 },
-  { date: '2026-04-18', method: '貨到付款', orderId: 'SO20260418009', amount: 1290 },
-]
+const transactions = computed(() => ordersStore.transactions)
 const orderStatusColor: Record<string, string> = {
   已出貨: '#7008e7',
   已完成: '#16a34a',
@@ -283,6 +298,16 @@ function changePassword() {
   pwNew.value = ''
   pwConfirm.value = ''
   ui.toast('密碼已更新')
+}
+
+// 超商門市小圖（存放於 public/member-icons/，以 BASE_URL 引入）
+const sevenIcon = `${import.meta.env.BASE_URL}member-icons/seven.png`
+const familyIcon = `${import.meta.env.BASE_URL}member-icons/family.png`
+
+// 綁定帳號社群小圖（public/member-icons/ 的 svg，以 BASE_URL 引入）
+function socialIconSrc(icon: SocialAccount['icon']) {
+  const name = icon === 'fb' ? 'facebook' : icon === 'ig' ? 'instagram' : icon
+  return `${import.meta.env.BASE_URL}member-icons/${name}.svg`
 }
 
 // --- Add / Edit address drawer ---
@@ -697,14 +722,14 @@ function saveAddr() {
 
             <div class="flex flex-col gap-1.5">
               <label class="text-sm text-[#334155]">生日</label>
-              <div class="relative max-w-[200px]">
-                <input
-                  v-model="birthday"
-                  type="date"
-                  class="h-[40px] w-full px-3 pr-10 text-sm rounded-[6px] border border-[#cbd5e1] outline-none focus:border-[var(--primary)] transition-colors text-[#334155]"
-                />
-                <i class="pi pi-calendar absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] text-sm pointer-events-none" />
-              </div>
+              <DatePicker
+                v-model="birthday"
+                date-format="yy-mm-dd"
+                show-icon
+                icon-display="input"
+                :max-date="new Date()"
+                class="w-[200px]"
+              />
             </div>
           </div>
 
@@ -776,11 +801,7 @@ function saveAddr() {
           >
             <div class="flex items-center gap-3 min-w-0">
               <img
-                :src="`/member-icons/${
-                  acc.icon === 'fb' ? 'facebook'
-                  : acc.icon === 'ig' ? 'instagram'
-                  : acc.icon
-                }.svg`"
+                :src="socialIconSrc(acc.icon)"
                 :alt="acc.label"
                 class="w-8 h-8 object-contain shrink-0"
               />
@@ -861,7 +882,7 @@ function saveAddr() {
               <div v-if="addr.chain" class="flex items-center gap-2 mt-2">
                 <i class="pi pi-map-marker text-xs shrink-0 text-[#64748b]" />
                 <img
-                  :src="addr.chain === '7-11' ? '/member-icons/seven.png' : '/member-icons/family.png'"
+                  :src="addr.chain === '7-11' ? sevenIcon : familyIcon"
                   :alt="addr.chain"
                   class="w-7 h-7 object-contain shrink-0"
                 />
@@ -877,7 +898,7 @@ function saveAddr() {
             </div>
             <div class="flex items-center gap-2 shrink-0">
               <Button icon="pi pi-pencil" severity="secondary" outlined size="small" @click="openEditAddr(addr)" />
-              <Button icon="pi pi-trash" severity="danger" outlined size="small" @click="deleteAddr(addr.id)" />
+              <Button icon="pi pi-trash" severity="danger" outlined size="small" @click="askDeleteAddr(addr.id)" />
               <Button v-if="!addr.isDefault" label="設為預設" outlined size="small" class="whitespace-nowrap" @click="setDefaultAddr(addr.id)" />
             </div>
           </div>
@@ -933,88 +954,95 @@ function saveAddr() {
       </div>
     </main>
 
-    <!-- Add / Edit address drawer -->
-    <Transition name="addr-fade">
-      <div v-if="addrDrawerOpen" class="addr-backdrop" @click="addrDrawerOpen = false" />
-    </Transition>
-    <Transition name="addr-slide">
-      <div v-if="addrDrawerOpen" class="addr-panel">
-        <div class="max-w-[1280px] mx-auto px-4 pt-5 pb-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold text-[18px] text-[#020617]">
-              {{ addrDrawerMode === 'edit' ? '編輯' : '新增' }}{{ addressTab === 'home' ? '宅配地址' : '超商門市' }}
-            </h3>
-            <Button icon="pi pi-times" severity="secondary" text rounded @click="addrDrawerOpen = false" />
-          </div>
-
-          <div class="flex flex-col gap-4 max-w-[440px] mx-auto">
-            <!-- Store: chain picker -->
-            <div v-if="addressTab === 'store'" class="flex flex-col gap-2">
-              <label class="text-sm text-[#334155]">選擇超商</label>
-              <div class="flex gap-3">
-                <button
-                  class="w-[64px] h-[44px] rounded-[6px] border-2 flex items-center justify-center bg-white transition-all"
-                  :style="form.chain === '7-11' ? 'border-color: var(--primary)' : 'border-color:#e2e8f0'"
-                  @click="form.chain = '7-11'"
-                >
-                  <img src="/member-icons/seven.png" alt="7-11" class="w-7 h-7 object-contain" />
-                </button>
-                <button
-                  class="w-[64px] h-[44px] rounded-[6px] border-2 flex items-center justify-center bg-white transition-all"
-                  :style="form.chain === 'FamilyMart' ? 'border-color: var(--primary)' : 'border-color:#e2e8f0'"
-                  @click="form.chain = 'FamilyMart'"
-                >
-                  <img src="/member-icons/family.png" alt="FamilyMart" class="w-7 h-7 object-contain" />
-                </button>
-              </div>
-            </div>
-
-            <div v-if="addressTab === 'store'" class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#334155]">門市名稱<span style="color:#ef4444"> *</span></label>
-              <InputText v-model="form.storeName" placeholder="例：鑫工門市" class="w-full" />
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#334155]">收件人姓名<span style="color:#ef4444"> *</span></label>
-              <InputText v-model="form.name" placeholder="請輸入收件人姓名" class="w-full" />
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#334155]">收件人電話<span style="color:#ef4444"> *</span></label>
-              <div class="flex gap-2">
-                <Select v-model="form.countryCode" :options="phoneCodes" class="w-[100px]" />
-                <InputText v-model="form.phone" type="tel" placeholder="請輸入電話號碼" class="flex-1" />
-              </div>
-            </div>
-
-            <!-- Home: city/district -->
-            <div v-if="addressTab === 'home'" class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#334155]">城市 / 區</label>
-              <div class="flex gap-2">
-                <Select v-model="form.city" :options="cities" class="flex-1" />
-                <Select v-model="form.district" :options="districts" class="flex-1" />
-              </div>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="text-sm text-[#334155]">
-                {{ addressTab === 'home' ? '詳細收件地址' : '門市地址' }}<span style="color:#ef4444"> *</span>
-              </label>
-              <InputText
-                v-model="form.detail"
-                :placeholder="addressTab === 'home' ? '街道、門牌、樓層' : '門市完整地址'"
-                class="w-full"
-              />
-            </div>
-          </div>
-
-          <div class="flex justify-end gap-2 mt-5 max-w-[440px] mx-auto">
-            <Button label="取消" severity="secondary" outlined @click="addrDrawerOpen = false" />
-            <Button :disabled="!formValid" :label="addrDrawerMode === 'edit' ? '儲存' : '確認新增'" @click="saveAddr" />
+    <!-- Add / Edit address dialog -->
+    <Dialog
+      v-model:visible="addrDrawerOpen"
+      modal
+      :draggable="false"
+      :header="(addrDrawerMode === 'edit' ? '編輯' : '新增') + (addressTab === 'home' ? '宅配地址' : '超商門市')"
+      :style="{ width: '28rem' }"
+    >
+      <div class="flex flex-col gap-4">
+        <!-- Store: chain picker -->
+        <div v-if="addressTab === 'store'" class="flex flex-col gap-2">
+          <label class="text-sm text-[#334155]">選擇超商</label>
+          <div class="flex gap-3">
+            <button
+              class="w-[64px] h-[44px] rounded-[6px] border-2 flex items-center justify-center bg-white transition-all"
+              :style="form.chain === '7-11' ? 'border-color: var(--primary)' : 'border-color:#e2e8f0'"
+              @click="form.chain = '7-11'"
+            >
+              <img :src="sevenIcon" alt="7-11" class="w-7 h-7 object-contain" />
+            </button>
+            <button
+              class="w-[64px] h-[44px] rounded-[6px] border-2 flex items-center justify-center bg-white transition-all"
+              :style="form.chain === 'FamilyMart' ? 'border-color: var(--primary)' : 'border-color:#e2e8f0'"
+              @click="form.chain = 'FamilyMart'"
+            >
+              <img :src="familyIcon" alt="FamilyMart" class="w-7 h-7 object-contain" />
+            </button>
           </div>
         </div>
+
+        <div v-if="addressTab === 'store'" class="flex flex-col gap-1.5">
+          <label class="text-sm text-[#334155]">門市名稱<span style="color:#ef4444"> *</span></label>
+          <InputText v-model="form.storeName" placeholder="例：鑫工門市" class="w-full" />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[#334155]">收件人姓名<span style="color:#ef4444"> *</span></label>
+          <InputText v-model="form.name" placeholder="請輸入收件人姓名" class="w-full" />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[#334155]">收件人電話<span style="color:#ef4444"> *</span></label>
+          <div class="flex gap-2">
+            <Select v-model="form.countryCode" :options="phoneCodes" class="w-[120px]" />
+            <InputText v-model="form.phone" type="tel" placeholder="請輸入電話號碼" class="flex-1" />
+          </div>
+        </div>
+
+        <!-- Home: city/district -->
+        <div v-if="addressTab === 'home'" class="flex flex-col gap-1.5">
+          <label class="text-sm text-[#334155]">城市 / 區</label>
+          <div class="flex gap-2">
+            <Select v-model="form.city" :options="cities" class="flex-1" />
+            <Select v-model="form.district" :options="districts" class="flex-1" />
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm text-[#334155]">
+            {{ addressTab === 'home' ? '詳細收件地址' : '門市地址' }}<span style="color:#ef4444"> *</span>
+          </label>
+          <InputText
+            v-model="form.detail"
+            :placeholder="addressTab === 'home' ? '街道、門牌、樓層' : '門市完整地址'"
+            class="w-full"
+          />
+        </div>
       </div>
-    </Transition>
+
+      <template #footer>
+        <Button label="取消" severity="secondary" outlined @click="addrDrawerOpen = false" />
+        <Button :disabled="!formValid" :label="addrDrawerMode === 'edit' ? '儲存' : '確認新增'" @click="saveAddr" />
+      </template>
+    </Dialog>
+
+    <!-- 刪除地址確認彈窗 -->
+    <Dialog
+      v-model:visible="deleteConfirmOpen"
+      modal
+      :draggable="false"
+      :header="addressTab === 'home' ? '刪除宅配地址' : '刪除超商門市'"
+      :style="{ width: '20rem' }"
+    >
+      <p class="text-sm text-[#334155] leading-relaxed">確定要刪除這筆{{ addressTab === 'home' ? '宅配地址' : '超商門市' }}嗎？此操作無法復原。</p>
+      <template #footer>
+        <Button label="取消" severity="secondary" outlined @click="deleteConfirmOpen = false" />
+        <Button label="刪除" severity="danger" @click="confirmDeleteAddr" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -1022,34 +1050,4 @@ function saveAddr() {
 .shadow-card {
   box-shadow: 0 1px 2px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.1);
 }
-
-.addr-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 100;
-}
-.addr-panel {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 720px;
-  z-index: 110;
-  background: white;
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-}
-.addr-fade-enter-active,
-.addr-fade-leave-active { transition: opacity 0.25s ease; }
-.addr-fade-enter-from,
-.addr-fade-leave-to { opacity: 0; }
-.addr-slide-enter-active,
-.addr-slide-leave-active { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.addr-slide-enter-from,
-.addr-slide-leave-to { transform: translate(-50%, 100%); }
 </style>

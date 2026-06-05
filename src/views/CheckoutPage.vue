@@ -1,22 +1,32 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
-import { products } from '../data/products'
 import { useViewportStore } from '../stores/viewport'
 import { useUiStore } from '../stores/ui'
 import { useCartStore } from '../stores/cart'
+import { useOrdersStore } from '../stores/orders'
 
 const viewportStore = useViewportStore()
 const drawerWidth = computed(() => `${viewportStore.current.width ?? 1280}px`)
+// 優惠券抽屜：電腦版固定 680px，手機／平板符合容器寬
+const couponDrawerWidth = computed(() => `${viewportStore.current.width ?? 680}px`)
 
 const router = useRouter()
 const ui = useUiStore()
 const cartStore = useCartStore()
+const ordersStore = useOrdersStore()
 
 function placeOrder() {
-  cartStore.groups = []
+  // 1) 同步寫入交易紀錄／我的訂單（需在清空購物車前取得品項數與金額）
+  const method = paymentMethods.find(m => m.value === paymentMethod.value)?.label ?? '線上信用卡'
+  const now = new Date()
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  ordersStore.placeOrder({ total: finalTotal.value, items: allItems.value.length, method, date })
+  // 2) 只結清已購買（勾選）的商品，未勾選的留在購物車
+  cartStore.groups.forEach(g => { g.items = g.items.filter(i => !i.checked) })
+  cartStore.groups = cartStore.groups.filter(g => g.items.length > 0)
   ui.toast('訂單已成立，感謝您的購買！')
   router.push('/')
 }
@@ -24,6 +34,7 @@ function placeOrder() {
 interface SubItem { name: string; image?: string; spec: string; qty: number }
 interface Item {
   id: string
+  productId?: number
   name: string
   image?: string
   spec: string[]
@@ -31,63 +42,30 @@ interface Item {
   price: number
   bundleItems?: SubItem[]
 }
-interface Group {
-  id: number
-  sellerName: string
-  items: Item[]
+
+// 結帳頁不分賣場，攤平成單一商品明細（資料來源同購物車 store；只結帳已勾選商品）
+const allItems = computed<Item[]>(() =>
+  cartStore.groups.flatMap(g => g.items).filter(i => i.checked).map(i => ({
+    id: i.id,
+    productId: i.productId,
+    name: i.name,
+    image: i.image,
+    spec: [i.spec],
+    qty: i.qty,
+    price: i.price,
+    bundleItems: i.bundleItems,
+  }))
+)
+function goProduct(productId?: number) {
+  if (productId != null) router.push(`/product/${productId}`)
 }
+const itemsSubtotal = computed(() => allItems.value.reduce((s, i) => s + i.price * i.qty, 0))
 
-const groups: Group[] = [
-  {
-    id: 1,
-    sellerName: '春節服飾好禮直播連線',
-    items: [
-      {
-        id: 'c1', name: '秋冬優惠三件組（若是超過一行會顯示點點點）',
-        image: products.find(p => p.id === 13)?.image,
-        spec: ['新款 秋冬慵懶軟糯毛衣 吊帶連衣裙套裝(外套) S/黑x1', '新款 秋冬慵懶軟糯毛衣 吊帶連衣裙套裝(外套) S/黑x1'],
-        qty: 1, price: 688,
-        bundleItems: [
-          { name: '新款 秋冬慵懶軟糯毛衣 吊帶連衣裙套裝(外套) S/黑x1', image: products.find(p => p.id === 3)?.image, spec: 'S/黑', qty: 1 },
-          { name: '新款 秋冬慵懶軟糯毛衣 吊帶連衣裙套裝(外套) S/黑x1', image: products.find(p => p.id === 7)?.image, spec: 'S/黑', qty: 1 },
-          { name: '新款 秋冬慵懶軟糯毛衣 吊帶連衣裙套裝(外套) S/黑x1', image: products.find(p => p.id === 1)?.image, spec: 'S/黑', qty: 1 },
-        ],
-      },
-      {
-        id: 'c2', name: '秋裝長袖公主南瓜系包屁衣 秋裝長袖公主南瓜系包屁衣（若…',
-        image: products.find(p => p.id === 1)?.image,
-        spec: ['80cm,橘'], qty: 1, price: 688,
-      },
-      {
-        id: 'c3', name: '限量 MM巧克力男寶寶搞怪包屁衣（若是超過一行會顯示點…',
-        image: products.find(p => p.id === 7)?.image,
-        spec: ['66cm,藍色'], qty: 1, price: 300,
-      },
-    ],
-  },
-  {
-    id: 2,
-    sellerName: '兒童大廠清倉',
-    items: [
-      {
-        id: 'c4', name: '新款組合 包屁衣韓版小洋裝雙件組',
-        image: products.find(p => p.id === 13)?.image,
-        spec: ['66cm'], qty: 1, price: 300,
-        bundleItems: [
-          { name: '新款 包屁衣韓版小洋裝 黑x1', image: products.find(p => p.id === 3)?.image, spec: '黑', qty: 1 },
-          { name: '新款 包屁衣韓版小洋裝 白x1', image: products.find(p => p.id === 7)?.image, spec: '白', qty: 1 },
-        ],
-      },
-    ],
-  },
-]
+// 沒有任何已勾選商品時（例如直接打網址進來），導回購物車
+onMounted(() => {
+  if (allItems.value.length === 0) router.replace('/cart')
+})
 
-const expandedBundles = ref<Record<string, boolean>>({ c1: true, c4: true })
-function toggleBundle(id: string) { expandedBundles.value[id] = !expandedBundles.value[id] }
-
-// 結帳頁不分賣場，攤平成單一商品明細
-const allItems = groups.flatMap(g => g.items)
-const itemsSubtotal = allItems.reduce((s, i) => s + i.price * i.qty, 0)
 
 // Form state
 const couponCode = ref('')
@@ -104,19 +82,92 @@ interface Coupon {
   expiry: string
   disabled?: boolean
   disabledReason?: string
+  applicableItemIds?: string[]   // 不填 = 全品項適用；有填則僅限指定商品
+  minSpend?: number              // 使用門檻（訂單小計需達此金額）
 }
 const coupons = ref<Coupon[]>([
-  { id: 'cp1', amount: '折300', title: '滿千折百優惠券（滿1000元使用）', desc: '活動訂單滿 $1000 現折 $300', scope: '適用範圍（直播場次）：我是直播場次-2025-12-24', expiry: '有效期限至 2026.01.20 23:00' },
-  { id: 'cp2', amount: '90%', title: '滿千五折（滿1000元使用）', desc: '活動訂單滿 $5000 打9折', scope: '適用範圍(粉絲團貼文)：我是粉絲團貼文-2025-12-24', expiry: '有效期限至 2026.01.20 23:00' },
-  { id: 'cp3', amount: '折300', title: '滿三千折三百（滿3000元使用）', desc: '常客單筆滿 $3000 現折 $300', scope: '適用範圍：全站', expiry: '有效期限至 2026.01.20 23:00', disabled: true, disabledReason: '金額未達門檻' },
+  { id: 'cp1', amount: '折100', title: '滿千折百優惠券（滿1000元使用）', desc: '活動訂單滿 $1000 現折 $100', scope: '適用範圍（直播場次）：我是直播場次-2025-12-24', expiry: '有效期限至 2026.01.20 23:00', minSpend: 1000 },
+  { id: 'cp2', amount: '50%', title: '滿千五折（滿1000元使用）', desc: '活動訂單滿 $1000 打5折', scope: '適用範圍(粉絲團貼文)：我是粉絲團貼文-2025-12-24', expiry: '有效期限至 2026.01.20 23:00', minSpend: 1000 },
+  { id: 'cp4', amount: '折50', title: '指定童裝折50（限單一商品）', desc: '指定洋裝商品現折 $50', scope: '適用商品：韓版泡泡袖針織洋裝', expiry: '有效期限至 2026.01.20 23:00', applicableItemIds: ['i2'] },
+  { id: 'cp5', amount: '折80', title: '組合商品專屬折80（限單一商品）', desc: '指定組合商品現折 $80', scope: '適用商品：包屁衣韓版小洋裝雙件組', expiry: '有效期限至 2026.01.20 23:00', applicableItemIds: ['i1'] },
+  { id: 'cp3', amount: '折300', title: '滿三千折三百（滿3000元使用）', desc: '常客單筆滿 $3000 現折 $300', scope: '適用範圍：全站', expiry: '有效期限至 2026.01.20 23:00', minSpend: 3000 },
 ])
 const couponDrawerOpen = ref(false)
-const couponDrawerSelected = ref<string | null>('cp1')
+const couponDrawerSelected = ref<string | null>(null)
+
+// 優惠券是否可用（未達門檻或停用則不可用）
+function isCouponUsable(c: Coupon) {
+  return !c.disabled && itemsSubtotal.value >= (c.minSpend ?? 0)
+}
+function couponUnusableReason(c: Coupon) {
+  if (c.disabled) return c.disabledReason ?? '不可使用'
+  if (c.minSpend && itemsSubtotal.value < c.minSpend) return '金額未達門檻'
+  return ''
+}
+// 某張券對目前購物車可折抵的金額（一次性面額，不乘數量）
+function discountOf(c: Coupon): number {
+  if (!isCouponUsable(c)) return 0
+  if (c.applicableItemIds) {
+    const target = allItems.value.find(i => c.applicableItemIds!.includes(i.id))
+    if (!target) return 0
+    const line = target.price * target.qty
+    const fixed = c.amount.match(/折(\d+)/)
+    if (fixed) return Math.min(line, Number(fixed[1]))
+    const pct = c.amount.match(/(\d+)%/)
+    if (pct) return Math.round(line * (100 - Number(pct[1])) / 100)
+    return 0
+  }
+  const fixed = c.amount.match(/折(\d+)/)
+  if (fixed) return Number(fixed[1])
+  const pct = c.amount.match(/(\d+)%/)
+  if (pct) return Math.round(itemsSubtotal.value * (100 - Number(pct[1])) / 100)
+  return 0
+}
+
+// 自動挑選折抵最多的可用券；使用者手動選擇後改用手動值
+const manualCouponId = ref<string | null>(null)
+const bestCouponId = computed(() => {
+  const usable = coupons.value.filter(isCouponUsable)
+  if (!usable.length) return null
+  return usable.reduce((best, c) => discountOf(c) > discountOf(best) ? c : best).id
+})
+const appliedCouponId = computed(() => manualCouponId.value ?? bestCouponId.value)
+const appliedCoupon = computed(() => coupons.value.find(c => c.id === appliedCouponId.value) ?? null)
+// 抽屜顯示排序：可用的優先，折抵多的排前面（最優惠在第一個）
+const sortedCoupons = computed(() =>
+  [...coupons.value].sort((a, b) => {
+    const ua = isCouponUsable(a), ub = isCouponUsable(b)
+    if (ua !== ub) return ua ? -1 : 1
+    return discountOf(b) - discountOf(a)
+  })
+)
+// 指定商品券：判斷某商品是否在適用範圍內（無 applicableItemIds = 全品項適用）
+function couponAppliesTo(itemId: string) {
+  const c = appliedCoupon.value
+  if (!c || !c.applicableItemIds) return true
+  return c.applicableItemIds.includes(itemId)
+}
+// 該商品整列金額（單價 × 數量）
+function lineTotal(item: Item) {
+  return item.price * item.qty
+}
+// 指定商品券折抵後的整列金額；非該指定商品回傳 null（券面額一次性折抵整列）
+function discountedLineTotal(item: Item): number | null {
+  const c = appliedCoupon.value
+  if (!c || !c.applicableItemIds || !c.applicableItemIds.includes(item.id)) return null
+  return Math.max(0, lineTotal(item) - discountOf(c))
+}
+// 商品明細小計：以折抵後的整列金額加總，與每列顯示及底下總計同步
+const itemsDisplayTotal = computed(() =>
+  allItems.value.reduce((s, i) => s + (discountedLineTotal(i) ?? lineTotal(i)), 0)
+)
+
 function openCouponDrawer() {
-  couponDrawerSelected.value = coupons.value.find(c => !c.disabled)?.id ?? null
+  couponDrawerSelected.value = appliedCouponId.value ?? coupons.value.find(isCouponUsable)?.id ?? null
   couponDrawerOpen.value = true
 }
 function confirmCouponDrawer() {
+  manualCouponId.value = couponDrawerSelected.value
   couponDrawerOpen.value = false
   ui.toast('已套用選擇的優惠券')
 }
@@ -263,20 +314,21 @@ const drawerCountries = ['台灣', '香港']
 const drawerCities = ['高雄市', '台北市', '桃園市']
 const drawerDistricts = ['前鎮區', '三民區', '信義區']
 
-// Money breakdown (mock)
-const productTotal = 1976
+// Money breakdown（商品總金額同明細小計，其餘折抵為 mock）
+const productTotal = computed(() => itemsSubtotal.value)
 const shippingTotal = computed(() => shippingFee.value + 100) // 100 = other group fee
 const multiItemDiscount = -100
 const shippingDiscount = -200
-const couponDiscount = -100
+// 優惠券折扣：一張券只折一筆（指定商品券折該品、整單券折全單）
+const couponDiscount = computed(() => appliedCoupon.value ? -discountOf(appliedCoupon.value) : 0)
 const rewardPointsNum = computed(() => Math.max(0, Number(rewardPoints.value) || 0))
 const shoppingCreditNum = computed(() => Math.max(0, Number(shoppingCredit.value) || 0))
 const finalTotal = computed(() =>
-  productTotal + shippingTotal.value + multiItemDiscount + shippingDiscount + couponDiscount
+  productTotal.value + shippingTotal.value + multiItemDiscount + shippingDiscount + couponDiscount.value
   - rewardPointsNum.value - shoppingCreditNum.value
 )
 const totalSaved = computed(() =>
-  Math.abs(multiItemDiscount + shippingDiscount + couponDiscount) + rewardPointsNum.value + shoppingCreditNum.value
+  Math.abs(multiItemDiscount + shippingDiscount + couponDiscount.value) + rewardPointsNum.value + shoppingCreditNum.value
 )
 </script>
 
@@ -294,26 +346,6 @@ const totalSaved = computed(() =>
     </div>
 
     <main class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" style="padding: var(--page-pad-y) var(--page-pad-x) 120px; gap: var(--stack-gap)">
-      <!-- Coupon -->
-      <section class="bg-white rounded-[12px] shadow-card card-pad flex items-center justify-between gap-4 flex-wrap">
-        <span class="font-medium text-[#334155]">優惠券</span>
-        <div class="flex items-center gap-3 flex-wrap">
-          <span class="flex items-center gap-1.5 text-sm" style="color: #16a34a">
-            <i class="pi pi-check-circle" />
-            已套用『滿千折百』優惠券
-          </span>
-          <Button label="選擇可使用優惠券" @click="openCouponDrawer" />
-          <InputGroup class="w-[260px]">
-            <InputText
-              v-model="couponCode"
-              placeholder="輸入優惠券優惠代碼"
-              @keyup.enter="applyCouponCode"
-            />
-            <Button label="使用" severity="secondary" outlined @click="applyCouponCode" />
-          </InputGroup>
-        </div>
-      </section>
-
       <!-- 商品明細（不分賣場，單一列表） -->
       <section class="bg-white rounded-[12px] shadow-card">
         <div class="px-[16px] py-[10.5px] cart-divider">
@@ -325,45 +357,87 @@ const totalSaved = computed(() =>
           :class="ii !== allItems.length - 1 ? 'cart-divider' : ''"
         >
           <div class="flex items-start gap-4 px-[16px] py-[10.5px]">
-            <div class="shrink-0 w-[80px] h-[80px] bg-[#d9d9d9] rounded-[4px] overflow-hidden">
+            <div
+              class="shrink-0 w-[56px] h-[56px] rounded-[4px] overflow-hidden"
+              :class="item.productId != null ? 'cursor-pointer' : ''"
+              @click="goProduct(item.productId)"
+            >
               <img v-if="item.image" :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full bg-gray-100 flex flex-col items-center justify-center gap-0.5">
+                <i class="pi pi-hammer text-gray-300 text-lg" />
+                <span class="text-gray-400 text-[10px]">圖片施工中</span>
+              </div>
             </div>
             <div class="flex-1 min-w-0 flex flex-col gap-1">
-              <p class="font-semibold text-[16px] text-[#334155] truncate">{{ item.name }}</p>
-              <div v-for="(s, si) in item.spec" :key="si" class="flex gap-4 text-[14px] text-[#334155]">
-                <span class="shrink-0">規格</span>
-                <span class="truncate">{{ s }}</span>
-              </div>
+              <p
+                class="font-semibold text-[16px] text-[#334155] truncate"
+                :class="item.productId != null ? 'cursor-pointer hover:text-[color:var(--primary)] transition-colors' : ''"
+                @click="goProduct(item.productId)"
+              >{{ item.name }}</p>
+              <template v-for="(s, si) in item.spec" :key="si">
+                <div v-if="s && s !== '預設'" class="flex gap-4 text-[14px] text-[#334155]">
+                  <span class="shrink-0">規格</span>
+                  <span class="truncate">{{ s }}</span>
+                </div>
+              </template>
               <div class="flex gap-4 text-[14px] text-[#334155]">
                 <span>數量</span><span>{{ item.qty }}</span>
               </div>
             </div>
-            <div class="shrink-0 text-right text-[#334155] font-medium">
-              ${{ item.price.toLocaleString() }}
+            <div class="shrink-0 text-right flex flex-col items-end gap-0.5">
+              <template v-if="discountedLineTotal(item) !== null">
+                <Tag
+                  :value="'已套用 ' + appliedCoupon?.amount"
+                  severity="success"
+                  class="!text-[11px] !py-0.5"
+                />
+                <span class="text-[13px] text-[#94a3b8] line-through">${{ lineTotal(item).toLocaleString() }}</span>
+                <span class="font-bold text-[16px]" style="color: var(--primary)">${{ discountedLineTotal(item)?.toLocaleString() }}</span>
+              </template>
+              <template v-else>
+                <Tag
+                  v-if="appliedCoupon && !couponAppliesTo(item.id)"
+                  value="本券不適用"
+                  severity="secondary"
+                  class="!text-[11px] !py-0.5 !bg-[#f1f5f9] !text-[#94a3b8]"
+                />
+                <span class="text-[#334155] font-medium">${{ lineTotal(item).toLocaleString() }}</span>
+              </template>
             </div>
           </div>
 
-          <!-- Bundle -->
-          <div v-if="item.bundleItems" class="px-[16px] pb-[16px] pl-[36px] pt-[15px]">
-            <div class="relative border border-[#e2e8f0] rounded-[6px] bg-white pt-4 px-[16px] pb-[16px]">
-              <button
-                class="absolute border-0 rounded-[6px] px-[11.5px] py-[8px] flex items-center gap-[7px] text-[14px] font-black text-[#334155] transition-colors hover:text-[var(--primary)]"
-                style="top: -17.75px; left: 15.75px; background: transparent"
-                @click="toggleBundle(item.id)"
-              >
-                <i class="pi text-xs" :class="expandedBundles[item.id] ? 'pi-minus' : 'pi-plus'" />
-                組合商品內容
-              </button>
-              <div v-if="expandedBundles[item.id]" class="flex flex-col gap-1 text-[14px] text-[#334155]">
-                <span v-for="(sub, si) in item.bundleItems" :key="si">{{ sub.name }}</span>
-              </div>
-            </div>
+          <!-- Bundle（不可收合，直接列出；左緣對齊「數量」label） -->
+          <div v-if="item.bundleItems" class="pl-[88px] pr-[16px] pb-[16px]">
+            <p class="text-[14px] text-[#334155] leading-relaxed">
+              <span class="font-medium">組合商品內容：</span>{{ item.bundleItems.map(s => `${s.name} ×${s.qty * item.qty}`).join('、') }}
+            </p>
           </div>
         </div>
 
         <div class="cart-divider-top flex items-center justify-end gap-4 px-[16px] py-[14px]">
           <span class="text-[14px] text-[#334155]">訂單金額小計 ({{ allItems.length }}個商品)</span>
-          <span class="text-[24px] font-bold" style="color: var(--primary)">${{ itemsSubtotal.toLocaleString() }}</span>
+          <span class="text-[24px] font-bold" style="color: var(--primary)">${{ itemsDisplayTotal.toLocaleString() }}</span>
+        </div>
+      </section>
+
+      <!-- Coupon -->
+      <section class="bg-white rounded-[12px] shadow-card card-pad flex items-center justify-between gap-4 flex-wrap">
+        <span class="font-medium text-[#334155]">優惠券</span>
+        <div class="flex items-center gap-3 flex-wrap">
+          <span v-if="appliedCoupon" class="flex items-center gap-1.5 text-sm" style="color: #16a34a">
+            <i class="pi pi-check-circle" />
+            已套用『{{ appliedCoupon.title }}』
+            <span v-if="!manualCouponId" class="text-[12px] text-[#94a3b8]">（已自動套用最優惠）</span>
+          </span>
+          <Button label="選擇可使用優惠券" @click="openCouponDrawer" />
+          <InputGroup class="w-[260px]">
+            <InputText
+              v-model="couponCode"
+              placeholder="輸入優惠券優惠代碼"
+              @keyup.enter="applyCouponCode"
+            />
+            <Button label="使用" severity="secondary" outlined @click="applyCouponCode" />
+          </InputGroup>
         </div>
       </section>
 
@@ -481,13 +555,15 @@ const totalSaved = computed(() =>
           <span class="text-[#334155]">運費折抵</span>
           <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(shippingDiscount).toLocaleString() }}</span>
 
-          <!-- 已套用「滿千送百」 + 優惠券折扣 -->
-          <span class="justify-self-end flex items-center gap-1 text-[13px]" style="color: var(--primary)">
-            <i class="pi pi-ticket text-[12px]" />
-            已套用『滿千送百』
-          </span>
-          <span class="text-[#334155]">優惠券折扣</span>
-          <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(couponDiscount).toLocaleString() }}</span>
+          <!-- 已套用優惠券 + 優惠券折扣（顯示實際套用的券） -->
+          <template v-if="appliedCoupon">
+            <span class="justify-self-end flex items-center gap-1 text-[13px]" style="color: var(--primary)">
+              <i class="pi pi-ticket text-[12px]" />
+              已套用『{{ appliedCoupon.title }}』
+            </span>
+            <span class="text-[#334155]">優惠券折扣</span>
+            <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(couponDiscount).toLocaleString() }}</span>
+          </template>
 
           <!-- 紅利金 -->
           <template v-if="rewardPointsNum > 0">
@@ -530,8 +606,8 @@ const totalSaved = computed(() =>
       <div v-if="couponDrawerOpen" class="drawer-backdrop" @click="couponDrawerOpen = false" />
     </Transition>
     <Transition name="drawer-slide">
-      <div v-if="couponDrawerOpen" class="drawer-panel" :style="{ width: drawerWidth, maxWidth: '100vw' }">
-        <div class="max-w-[1280px] mx-auto px-4 pt-5 pb-5">
+      <div v-if="couponDrawerOpen" class="drawer-panel" :style="{ width: couponDrawerWidth, maxWidth: '100vw' }">
+        <div class="max-w-[680px] mx-auto px-4 pt-5 pb-5">
           <!-- Header -->
           <div class="flex items-center justify-between mb-4">
             <h3 class="font-bold text-[18px] text-[#020617]">可使用優惠券</h3>
@@ -541,29 +617,29 @@ const totalSaved = computed(() =>
           <!-- Coupon list -->
           <div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
             <label
-              v-for="c in coupons"
+              v-for="c in sortedCoupons"
               :key="c.id"
-              class="flex border border-[#e2e8f0] rounded-[10px] overflow-hidden"
-              :class="c.disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:border-[var(--primary)]'"
+              class="flex border border-[#e2e8f0] rounded-[10px]"
+              :class="!isCouponUsable(c) ? 'cursor-not-allowed' : 'cursor-pointer hover:border-[var(--primary)]'"
             >
               <!-- Amount block -->
               <div
-                class="w-[180px] shrink-0 flex items-center gap-2 px-4 py-4"
-                :style="c.disabled ? 'background: #f1f5f9' : 'background: #ede9fe'"
+                class="w-[140px] shrink-0 flex items-center justify-center gap-2 px-3 py-4 rounded-l-[10px]"
+                :style="!isCouponUsable(c) ? 'background: #f1f5f9' : 'background: #ede9fe'"
               >
-                <i class="pi pi-gift text-[22px]" :style="c.disabled ? 'color: #94a3b8' : 'color: var(--primary)'" />
-                <span class="font-bold text-[26px]" :style="c.disabled ? 'color: #94a3b8' : 'color: var(--primary)'">{{ c.amount }}</span>
+                <i class="pi pi-gift text-[22px]" :style="!isCouponUsable(c) ? 'color: #94a3b8' : 'color: var(--primary)'" />
+                <span class="font-bold text-[24px]" :style="!isCouponUsable(c) ? 'color: #94a3b8' : 'color: var(--primary)'">{{ c.amount }}</span>
               </div>
               <!-- Detail block -->
-              <div class="flex-1 px-4 py-3 flex flex-col gap-1">
+              <div class="flex-1 min-w-0 px-4 py-4 flex flex-col gap-1">
                 <p class="font-medium text-[15px] text-[#334155]">{{ c.title }}</p>
                 <p class="text-[13px] text-[#475569]">{{ c.desc }}</p>
-                <span class="self-start px-2 py-0.5 rounded text-[12px]" style="background: #fce7f3; color: #be185d">{{ c.scope }}</span>
+                <span class="self-start px-2 py-0.5 rounded text-[12px] break-words" style="background: #fce7f3; color: #be185d">{{ c.scope }}</span>
                 <p class="text-[12px] text-[#64748b] mt-1">{{ c.expiry }}</p>
               </div>
               <!-- Right side: radio / disabled note -->
-              <div class="w-[120px] shrink-0 flex items-center justify-center">
-                <span v-if="c.disabled" class="text-[13px]" style="color: #ef4444">{{ c.disabledReason }}</span>
+              <div class="w-[96px] shrink-0 flex items-center justify-center text-center py-2">
+                <span v-if="!isCouponUsable(c)" class="text-[13px]" style="color: #ef4444">{{ couponUnusableReason(c) }}</span>
                 <RadioButton v-else v-model="couponDrawerSelected" :value="c.id" />
               </div>
             </label>
@@ -715,7 +791,7 @@ const totalSaved = computed(() =>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">收件人電話</label>
                 <div class="flex gap-2">
-                  <Select v-model="newHomeCountryCode" :options="drawerCountryCodes" class="w-[100px]" />
+                  <Select v-model="newHomeCountryCode" :options="drawerCountryCodes" class="w-[120px]" />
                   <InputText v-model="newHomePhone" type="tel" class="flex-1" />
                 </div>
               </div>
@@ -780,7 +856,7 @@ const totalSaved = computed(() =>
               <div class="flex flex-col gap-1">
                 <label class="text-sm text-[#334155]">收件人電話</label>
                 <div class="flex gap-2">
-                  <Select v-model="newHomeCountryCode" :options="drawerCountryCodes" class="w-[100px]" />
+                  <Select v-model="newHomeCountryCode" :options="drawerCountryCodes" class="w-[120px]" />
                   <InputText v-model="newStorePhone" type="tel" class="flex-1" />
                 </div>
               </div>

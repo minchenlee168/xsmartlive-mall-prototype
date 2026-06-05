@@ -31,6 +31,9 @@ function groupSubtotal(group: CartGroup) {
 const globalTotal = computed(() =>
   groups.value.reduce((s, g) => s + groupSubtotal(g), 0)
 )
+const checkedCount = computed(() =>
+  groups.value.reduce((s, g) => s + g.items.filter(i => i.checked).length, 0)
+)
 const isEmpty = computed(() => groups.value.every(g => g.items.length === 0))
 function removeItem(group: CartGroup, id: string) {
   cart.removeItem(group.id, id)
@@ -40,6 +43,9 @@ function isGroupLocked(group: CartGroup) {
 }
 function goCheckout() {
   router.push('/checkout')
+}
+function goProduct(productId?: number) {
+  if (productId != null) router.push(`/product/${productId}`)
 }
 </script>
 
@@ -68,7 +74,7 @@ function goCheckout() {
     </main>
 
     <!-- Content -->
-    <main v-else class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" style="padding: var(--page-pad-y) var(--page-pad-x); gap: var(--stack-gap)">
+    <main v-else class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" style="padding: 0 0 var(--page-pad-y); gap: var(--stack-gap)">
       <div
         v-for="group in groups"
         :key="group.id"
@@ -106,19 +112,31 @@ function goCheckout() {
 
             <!-- Image -->
             <div
-              class="shrink-0 bg-[#d9d9d9] rounded-[4px] overflow-hidden aspect-square"
-              :class="isPC ? 'w-[100px]' : vp === 'tablet' ? 'w-[80px]' : 'w-[64px]'"
+              class="shrink-0 rounded-[4px] overflow-hidden aspect-square"
+              :class="[
+                isPC ? 'w-[100px]' : vp === 'tablet' ? 'w-[80px]' : 'w-[64px]',
+                item.productId != null ? 'cursor-pointer' : '',
+              ]"
+              @click="goProduct(item.productId)"
             >
               <img v-if="item.image" :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+              <div v-else class="w-full h-full bg-gray-100 flex flex-col items-center justify-center gap-0.5">
+                <i class="pi pi-hammer text-gray-300 text-lg" />
+                <span class="text-gray-400 text-[10px]">圖片施工中</span>
+              </div>
             </div>
 
             <!-- Info -->
             <div class="flex-1 min-w-0 flex" :class="isPC ? 'items-center gap-4' : 'flex-col gap-1'">
               <div class="flex-1 min-w-0 flex flex-col gap-1">
-                <p class="font-semibold text-[#334155] truncate text-[16px]">
+                <p
+                  class="font-semibold text-[#334155] truncate text-[16px]"
+                  :class="item.productId != null ? 'cursor-pointer hover:text-[color:var(--primary)] transition-colors' : ''"
+                  @click="goProduct(item.productId)"
+                >
                   {{ item.name }}
                 </p>
-                <div class="flex gap-4 text-[#334155] text-[14px]">
+                <div v-if="item.spec && item.spec !== '預設'" class="flex gap-4 text-[#334155] text-[14px]">
                   <span>規格</span>
                   <span>{{ item.spec }}</span>
                 </div>
@@ -139,8 +157,8 @@ function goCheckout() {
               <!-- Price + Delete -->
               <div class="flex items-center justify-between shrink-0" :class="isPC ? 'flex-col items-end gap-4' : 'mt-1'">
                 <div class="flex flex-col items-end">
-                  <span v-if="item.original" class="text-sm text-[#64748b] line-through">${{ item.original }}</span>
-                  <span class="font-medium leading-none" style="color: var(--primary)" :class="isPC ? 'text-[24px]' : 'text-base'">${{ item.price }}</span>
+                  <span v-if="item.original" class="text-sm text-[#64748b] line-through">${{ (item.original * item.qty).toLocaleString() }}</span>
+                  <span class="font-medium leading-none" style="color: var(--primary)" :class="isPC ? 'text-[24px]' : 'text-base'">${{ (item.price * item.qty).toLocaleString() }}</span>
                 </div>
                 <Button
                   v-if="!isGroupLocked(group)"
@@ -179,11 +197,11 @@ function goCheckout() {
                   </div>
                   <div class="flex flex-col gap-1 min-w-0 flex-1">
                     <p class="font-semibold text-[16px] text-[#334155] truncate">{{ sub.name }}</p>
-                    <div class="flex gap-4 text-[14px] text-[#334155]">
+                    <div v-if="sub.spec && sub.spec !== '預設'" class="flex gap-4 text-[14px] text-[#334155]">
                       <span>規格</span><span>{{ sub.spec }}</span>
                     </div>
                     <div class="flex gap-4 text-[14px] text-[#334155]">
-                      <span>數量</span><span>{{ sub.qty }}</span>
+                      <span>數量</span><span>{{ sub.qty * item.qty }}</span>
                     </div>
                   </div>
                 </div>
@@ -220,7 +238,12 @@ function goCheckout() {
             <span class="text-[18px] text-[#334155]">訂單總金額</span>
             <span class="text-[30px] font-bold" style="color: var(--primary)">${{ globalTotal.toLocaleString() }}</span>
           </div>
-          <Button label="去結帳" class="px-16" @click="goCheckout" />
+          <Button
+            :label="checkedCount > 0 ? `去結帳 (${checkedCount})` : '去結帳'"
+            class="px-16"
+            :disabled="checkedCount === 0"
+            @click="goCheckout"
+          />
         </div>
       </div>
     </div>

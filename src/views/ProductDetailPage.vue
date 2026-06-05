@@ -7,11 +7,13 @@ import CouponDrawer from '../components/CouponDrawer.vue'
 import { useViewportStore } from '../stores/viewport'
 import { useCartStore } from '../stores/cart'
 import { useUiStore } from '../stores/ui'
+import { useAuthStore } from '../stores/auth'
 import { products } from '../data/products'
 
 const route = useRoute()
 const router = useRouter()
 const cart = useCartStore()
+const auth = useAuthStore()
 const vp = computed(() => useViewportStore().current.id)
 const isPC = computed(() => vp.value === 'pc')
 const isMobile = computed(() => vp.value === 'mobile')
@@ -24,7 +26,27 @@ const activeThumb = ref(0)
 
 const thumbCount = computed(() => isPC.value ? 5 : isMobile.value ? 3 : 4)
 const showCouponDrawer = ref(false)
+const loginPromptOpen = ref(false)
 const ui = useUiStore()
+
+// 查看優惠券：先判斷登入，未登入跳提示彈窗
+function openCoupons() {
+  if (auth.isLoggedIn) showCouponDrawer.value = true
+  else loginPromptOpen.value = true
+}
+function goLoginForCoupons() {
+  loginPromptOpen.value = false
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
+}
+
+function addToCart() {
+  cart.addItem(
+    { id: product.value.id, name: product.value.name, price: product.value.price, original: product.value.original, image: product.value.image },
+    selectedSize.value || '預設',
+    qty.value,
+  )
+  ui.toast('已加入購物車')
+}
 
 function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
   const url = window.location.href
@@ -149,7 +171,7 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
                   icon-pos="right"
                   link
                   size="small"
-                  @click="showCouponDrawer = true"
+                  @click="openCoupons"
                 />
               </div>
 
@@ -181,7 +203,7 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
                 <Button
                   label="加入購物車"
                   icon="pi pi-cart-plus"
-                  @click="cart.addItem({ id: product.id, name: product.name, price: product.price, original: product.original, image: product.image }, selectedSize || '預設', qty)"
+                  @click="addToCart"
                 />
               </div>
 
@@ -262,4 +284,13 @@ function shareTo(platform: 'facebook' | 'line' | 'instagram' | 'link') {
   </div>
 
   <CouponDrawer v-model:visible="showCouponDrawer" />
+
+  <!-- 未登入提示彈窗 -->
+  <Dialog v-model:visible="loginPromptOpen" modal header="會員專屬優惠" :draggable="false" :closable="false" :style="{ width: '20rem' }">
+    <p class="text-sm text-[#334155] leading-relaxed">登入會員即可查看與領取可使用的優惠券，要先登入嗎？</p>
+    <template #footer>
+      <Button label="再逛逛" severity="secondary" outlined @click="loginPromptOpen = false" />
+      <Button label="去登入" @click="goLoginForCoupons" />
+    </template>
+  </Dialog>
 </template>
