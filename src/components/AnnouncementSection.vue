@@ -23,19 +23,14 @@ const imgError = ref(false)
 
     <!-- Announcement card -->
     <div class="bg-white border border-[#e2e8f0] rounded-lg overflow-hidden">
-      <!-- 頂部橫幅圖 -->
-      <div class="aspect-[3/1] w-full bg-gray-100">
+      <!-- 頂部橫幅圖（載入失敗則整塊收起，不顯示占位） -->
+      <div v-if="!imgError" class="aspect-[3/1] w-full bg-gray-100">
         <img
-          v-if="!imgError"
           :src="src"
           alt="直播公告"
           class="w-full h-full object-cover"
           @error="imgError = true"
         />
-        <div v-else class="w-full h-full flex flex-col items-center justify-center gap-1.5">
-          <i class="pi pi-hammer text-gray-300 text-4xl" />
-          <span class="text-sm text-gray-400">圖片施工中</span>
-        </div>
       </div>
 
       <!-- 場次文字 -->

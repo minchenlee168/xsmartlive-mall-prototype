@@ -155,7 +155,7 @@ function goProduct(productId?: number) {
               </div>
 
               <!-- Price + Delete -->
-              <div class="flex items-center justify-between shrink-0" :class="isPC ? 'flex-col items-end gap-4' : 'mt-1'">
+              <div class="flex items-center justify-between shrink-0" :class="isPC ? 'gap-8' : 'mt-1'">
                 <div class="flex flex-col items-end">
                   <span v-if="item.original" class="text-sm text-[#64748b] line-through">${{ (item.original * item.qty).toLocaleString() }}</span>
                   <span class="font-medium leading-none" style="color: var(--primary)" :class="isPC ? 'text-[24px]' : 'text-base'">${{ (item.price * item.qty).toLocaleString() }}</span>

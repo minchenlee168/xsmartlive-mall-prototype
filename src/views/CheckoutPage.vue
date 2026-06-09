@@ -464,7 +464,7 @@ const totalSaved = computed(() =>
           </div>
           <div class="text-sm text-[#334155] mt-1">配送地址</div>
           <div class="text-sm text-[#334155]" v-if="shipMethod === 'home' && selectedHome">
-            {{ selectedHome.name }} {{ selectedHome.phone }} 　 地址: {{ selectedHome.address }}
+            {{ selectedHome.name }} {{ selectedHome.phone }} 　 {{ selectedHome.address }}
           </div>
           <div class="text-sm text-[#334155]" v-else-if="shipMethod === 'store' && selectedStore">
             {{ selectedStore.name }} {{ selectedStore.phone }} 　 {{ selectedStore.chain }} {{ selectedStore.storeName }}（{{ selectedStore.address }}）
@@ -628,21 +628,27 @@ const totalSaved = computed(() =>
             >
               <!-- Amount block -->
               <div
-                class="w-[140px] shrink-0 flex items-center justify-center gap-2 px-3 py-4 rounded-l-[10px]"
+                class="shrink-0 flex items-center justify-center rounded-l-[10px]"
+                :class="isMobile ? 'w-[76px] gap-1 px-2 py-3' : 'w-[140px] gap-2 px-3 py-4'"
                 :style="!isCouponUsable(c) ? 'background: #f1f5f9' : 'background: #ede9fe'"
               >
-                <i class="pi pi-gift text-[22px]" :style="!isCouponUsable(c) ? 'color: #94a3b8' : 'color: var(--primary)'" />
-                <span class="font-bold text-[24px]" :style="!isCouponUsable(c) ? 'color: #94a3b8' : 'color: var(--primary)'">{{ c.amount }}</span>
+                <i v-if="!isMobile" class="pi pi-gift text-[22px]" :style="!isCouponUsable(c) ? 'color: #94a3b8' : 'color: var(--primary)'" />
+                <span class="font-bold" :class="isMobile ? 'text-[18px]' : 'text-[24px]'" :style="!isCouponUsable(c) ? 'color: #94a3b8' : 'color: var(--primary)'">{{ c.amount }}</span>
               </div>
               <!-- Detail block -->
-              <div class="flex-1 min-w-0 px-4 py-4 flex flex-col gap-1">
+              <div class="flex-1 min-w-0 flex flex-col gap-1" :class="isMobile ? 'px-3 py-3' : 'px-4 py-4'">
+                <span v-if="isMobile && !isCouponUsable(c)" class="text-[12px] font-medium" style="color: #ef4444">{{ couponUnusableReason(c) }}</span>
                 <p class="font-medium text-[15px] text-[#334155]">{{ c.title }}</p>
                 <p class="text-[13px] text-[#475569]">{{ c.desc }}</p>
                 <span class="self-start px-2 py-0.5 rounded text-[12px] break-words" style="background: #fce7f3; color: #be185d">{{ c.scope }}</span>
                 <p class="text-[12px] text-[#64748b] mt-1">{{ c.expiry }}</p>
               </div>
-              <!-- Right side: radio / disabled note -->
-              <div class="w-[96px] shrink-0 flex items-center justify-center text-center py-2">
+              <!-- Right side: radio / disabled note（手機版未達門檻改顯示於名稱上方，這欄隱藏） -->
+              <div
+                v-if="!(isMobile && !isCouponUsable(c))"
+                class="shrink-0 flex items-center justify-center text-center py-2"
+                :class="isMobile ? 'w-[60px]' : 'w-[96px]'"
+              >
                 <span v-if="!isCouponUsable(c)" class="text-[13px]" style="color: #ef4444">{{ couponUnusableReason(c) }}</span>
                 <RadioButton v-else v-model="couponDrawerSelected" :value="c.id" />
               </div>

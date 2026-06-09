@@ -83,7 +83,7 @@ function measureKeywordWidths() {
   document.body.appendChild(measurer)
   keywordWidths.value = hotKeywords.map(kw => {
     const btn = document.createElement('button')
-    btn.style.cssText = 'font-family: inherit; font-size: 14px; font-weight: 500; padding: 8px 12px; white-space: nowrap;'
+    btn.style.cssText = 'font-family: inherit; font-size: 12px; font-weight: 400; padding: 2px 8px; white-space: nowrap;'
     btn.textContent = kw
     measurer.appendChild(btn)
     return Math.ceil(btn.offsetWidth)
@@ -157,18 +157,21 @@ function pickKeyword(kw: string) {
           </div>
 
           <!-- Hot search keywords — PC only, only those that fully fit -->
-          <div
-            ref="keywordRowRef"
-            class="hidden @4xl:flex items-center flex-nowrap min-w-0 w-full"
-          >
-            <button
-              v-for="kw in visibleHotKeywords"
-              :key="kw"
-              class="text-sm font-medium text-[#475569] px-3 py-2 rounded-[6px] hover:bg-gray-100 hover:text-[color:var(--primary)] transition-colors whitespace-nowrap shrink-0"
-              @click="runSearch(kw)"
+          <div class="hidden @4xl:flex items-center min-w-0 w-full">
+            <span class="shrink-0 mr-1 text-xs font-medium text-[#94a3b8] whitespace-nowrap">熱門關鍵字：</span>
+            <div
+              ref="keywordRowRef"
+              class="flex items-center flex-nowrap min-w-0 flex-1 overflow-hidden"
             >
-              {{ kw }}
-            </button>
+              <a
+                v-for="kw in visibleHotKeywords"
+                :key="kw"
+                class="text-xs text-[#64748b] px-2 py-0.5 hover:text-[color:var(--primary)] hover:underline transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                @click="runSearch(kw)"
+              >
+                {{ kw }}
+              </a>
+            </div>
           </div>
 
         </div>

@@ -19,6 +19,7 @@ const items = products.slice(0, 10)
 
 <template>
   <Carousel
+    :key="perView"
     :value="items"
     :num-visible="perView"
     :num-scroll="1"
@@ -47,5 +48,34 @@ const items = products.slice(0, 10)
 :deep(.p-carousel-item) {
   display: flex;
   align-items: stretch;
+}
+
+/* 左右切換鈕：凸顯圓形按鈕，避免與背景相近 */
+:deep(.p-carousel-prev-button),
+:deep(.p-carousel-next-button) {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+:deep(.p-carousel-prev-button:hover),
+:deep(.p-carousel-next-button:hover) {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+:deep(.p-carousel-prev-button:disabled),
+:deep(.p-carousel-next-button:disabled) {
+  opacity: 0.4;
+}
+:deep(.p-carousel-prev-button .p-icon),
+:deep(.p-carousel-next-button .p-icon) {
+  width: 18px;
+  height: 18px;
 }
 </style>

@@ -21,7 +21,7 @@ const pad = (n: number) => String(n).padStart(2, '0')
   <!-- 紅色 header bar：比照 Figma（1280:53），限時搶購靠左、倒數靠右；內部用 cqh 等比例縮放 -->
   <div
     class="bg-red-300 rounded-[0.5rem] w-full flex items-center justify-between"
-    style="aspect-ratio: 1280 / 53; container-type: size; padding-inline: 1rem;"
+    style="aspect-ratio: 1280 / 53; min-height: 40px; container-type: size; padding-inline: 1rem;"
   >
     <!-- 靠左：限時搶購（緊貼左側） -->
     <div class="flex items-center" style="gap: 19cqh;">

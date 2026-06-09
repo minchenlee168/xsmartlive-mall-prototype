@@ -5,6 +5,7 @@ import { useViewportStore } from '../stores/viewport'
 const visible = defineModel<boolean>('visible', { default: false })
 
 const viewportStore = useViewportStore()
+const isMobile = computed(() => viewportStore.current.id === 'mobile')
 // 平板與電腦版固定 680px；手機符合容器寬度
 const drawerWidth = computed(() =>
   viewportStore.current.id === 'mobile' ? `${viewportStore.current.width}px` : '680px',
@@ -48,7 +49,6 @@ const coupons: Coupon[] = [
     tagText: '適用範圍：全站',
     tagType: 'secondary',
     expiry: '有效期限至 2026.01.20 23:00',
-    disabled: true,
   },
 ]
 </script>
@@ -60,44 +60,32 @@ const coupons: Coupon[] = [
     header="可使用優惠券"
     :style="{ width: drawerWidth, maxWidth: '100vw', left: 0, right: 0, margin: '0 auto', height: 'auto', maxHeight: '80vh' }"
   >
-    <!-- Coupon list -->
-    <div class="max-w-[680px] mx-auto flex flex-col">
+    <!-- Coupon list（卡片樣式比照結帳頁） -->
+    <div class="max-w-[680px] mx-auto flex flex-col gap-3">
       <div
         v-for="coupon in coupons"
         :key="coupon.id"
-        class="flex items-stretch gap-4 px-[17.5px] py-[10.5px] border-b border-[#e2e8f0] last:border-b-0"
+        class="flex border border-[#e2e8f0] rounded-[10px]"
       >
-        <!-- Left: discount value -->
+        <!-- Amount block -->
         <div
-          class="flex items-center gap-[8px] px-4 rounded-tl-[6px] rounded-bl-[6px] shrink-0 w-[160px] border-r border-dashed border-[#e5e7eb] py-3"
-          :class="coupon.disabled ? 'bg-[#cbd5e1]' : 'bg-[#f2ebff]'"
+          class="shrink-0 flex items-center justify-center rounded-l-[10px] bg-[#ede9fe]"
+          :class="isMobile ? 'w-[76px] gap-1 px-2 py-3' : 'w-[140px] gap-2 px-3 py-4'"
         >
-          <i
-            class="pi pi-ticket text-[26px]"
-            :class="coupon.disabled ? 'text-[#9ca3af]' : 'text-[color:var(--primary)]'"
-          />
+          <i v-if="!isMobile" class="pi pi-gift text-[22px]" style="color: var(--primary)" />
           <span
-            class="text-[26px] font-medium leading-none whitespace-nowrap"
-            :class="coupon.disabled ? 'text-[#6b7280]' : 'text-[color:var(--primary)]'"
+            class="font-bold"
+            :class="isMobile ? 'text-[18px]' : 'text-[24px]'"
+            style="color: var(--primary)"
           >{{ coupon.discount }}</span>
         </div>
 
-        <!-- Right: coupon info -->
-        <div class="flex flex-col gap-2 py-2 flex-1 min-w-0">
-          <p
-            class="font-semibold text-[18px] leading-snug"
-            :class="coupon.disabled ? 'text-[#64748b]' : 'text-[#334155]'"
-          >{{ coupon.name }}</p>
-          <p class="text-sm text-[#64748b]">{{ coupon.description }}</p>
-          <span
-            class="inline-flex items-center px-[7px] py-[3.5px] rounded-full text-[12px] font-bold w-fit"
-            :class="{
-              'bg-[#fee2e2] text-[#b91c1c]': coupon.tagType === 'danger',
-              'bg-[#e0f2fe] text-[#0369a1]': coupon.tagType === 'info',
-              'bg-[#f1f5f9] text-[#475569]': coupon.tagType === 'secondary',
-            }"
-          >{{ coupon.tagText }}</span>
-          <p class="text-sm text-[#64748b]">{{ coupon.expiry }}</p>
+        <!-- Detail block -->
+        <div class="flex-1 min-w-0 flex flex-col gap-1" :class="isMobile ? 'px-3 py-3' : 'px-4 py-4'">
+          <p class="font-medium text-[15px] text-[#334155]">{{ coupon.name }}</p>
+          <p class="text-[13px] text-[#475569]">{{ coupon.description }}</p>
+          <span class="self-start px-2 py-0.5 rounded text-[12px] break-words" style="background: #fce7f3; color: #be185d">{{ coupon.tagText }}</span>
+          <p class="text-[12px] text-[#64748b] mt-1">{{ coupon.expiry }}</p>
         </div>
       </div>
     </div>
