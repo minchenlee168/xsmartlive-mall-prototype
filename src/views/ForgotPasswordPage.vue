@@ -38,7 +38,7 @@ function resetPassword() {
   <div class="min-h-screen relative overflow-hidden" style="background: var(--surface-100)">
     <header class="relative z-10 bg-white border-b border-[var(--border-light)]">
       <div class="max-w-[1280px] mx-auto flex items-center justify-between px-8 py-2 h-14">
-        <button class="flex items-center gap-2 shrink-0" @click="router.push('/')">
+        <button class="flex items-center gap-2 shrink-0" @click="router.push('/shop')">
           <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-bg)">
             <span class="text-white font-bold text-base">X</span>
           </div>

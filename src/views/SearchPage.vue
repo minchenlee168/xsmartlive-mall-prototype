@@ -37,7 +37,7 @@ const results = computed(() => {
 
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm py-1">
-          <button class="text-[#64748b] hover:text-[color:var(--primary)] transition-colors" @click="router.push('/')">
+          <button class="text-[#64748b] hover:text-[color:var(--primary)] transition-colors" @click="router.push('/shop')">
             <i class="pi pi-home text-xs" />
           </button>
           <i class="pi pi-chevron-right text-[10px] text-[#94a3b8]" />

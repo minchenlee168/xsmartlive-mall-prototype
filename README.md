@@ -2,7 +2,7 @@
 
 xsmartlive 商城 UI 改版的設計原型,給設計 / PM / 利害關係人 review 用。
 
-**線上預覽**: <https://minchenlee168.github.io/xsmartlive-mall-prototype/>
+**線上預覽**: <https://minchenlee168.github.io/xsmartlive-all-prototype/>
 
 ## 用途
 
@@ -74,5 +74,5 @@ public/               # logo / icons / member 圖示
 
 ## 注意事項
 
-- `vite.config.ts` 的 `base: '/xsmartlive-mall-prototype/'` 是給 GitHub Pages 子路徑用,若改 custom domain 要改回 `'/'`
+- `vite.config.ts` 的 `base: '/xsmartlive-all-prototype/'` 是給 GitHub Pages 子路徑用,若改 custom domain 要改回 `'/'`
 - 用 `pnpm` 不要用 `npm`,且記得帶 `--ignore-workspace`

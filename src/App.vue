@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import FloatingControls from './components/FloatingControls.vue'
 import PageLoading from './components/PageLoading.vue'
 import { useViewportStore } from './stores/viewport'
@@ -8,6 +8,9 @@ import { useUiStore } from './stores/ui'
 
 const viewportStore = useViewportStore()
 const ui = useUiStore()
+const route = useRoute()
+// 入口頁與後台佔位頁不顯示浮動控制按鈕
+const showControls = computed(() => route.path !== '/' && route.path !== '/admin')
 
 const frameStyle = computed(() => {
   const w = viewportStore.current.width
@@ -40,7 +43,7 @@ const isConstrained = computed(() => !!viewportStore.current.width)
     </div>
   </div>
 
-  <FloatingControls />
+  <FloatingControls v-if="showControls" />
 
   <!-- 換頁 loading 遮罩 -->
   <PageLoading />

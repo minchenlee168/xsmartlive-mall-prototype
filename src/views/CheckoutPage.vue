@@ -29,7 +29,7 @@ function placeOrder() {
   cartStore.groups.forEach(g => { g.items = g.items.filter(i => !i.checked) })
   cartStore.groups = cartStore.groups.filter(g => g.items.length > 0)
   ui.toast('訂單已成立，感謝您的購買！')
-  router.push('/')
+  router.push('/shop')
 }
 
 interface SubItem { name: string; image?: string; spec: string; qty: number }

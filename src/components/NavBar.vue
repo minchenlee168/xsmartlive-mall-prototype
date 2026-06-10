@@ -57,7 +57,7 @@ function toggleUserMenu() { userMenuOpen.value = !userMenuOpen.value }
 function onLogout() {
   auth.logout()
   userMenuOpen.value = false
-  router.push('/')
+  router.push('/shop')
 }
 function onDocClick(e: MouseEvent) {
   const target = e.target as HTMLElement
@@ -134,7 +134,7 @@ function pickKeyword(kw: string) {
       <div class="flex items-center justify-between gap-3">
 
         <!-- Logo -->
-        <button class="flex items-center gap-2 shrink-0" @click="router.push('/')">
+        <button class="flex items-center gap-2 shrink-0" @click="router.push('/shop')">
           <div class="w-9 h-9 @4xl:w-10 @4xl:h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-bg)">
             <span class="text-white font-bold text-sm">X</span>
           </div>

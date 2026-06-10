@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import LandingPage from '../views/LandingPage.vue'
+import AdminPlaceholderPage from '../views/AdminPlaceholderPage.vue'
 import HomePage from '../views/HomePage.vue'
 import ThemeHallPage from '../views/ThemeHallPage.vue'
 import CategoryPage from '../views/CategoryPage.vue'
@@ -17,7 +19,9 @@ import { useAuthStore } from '../stores/auth'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', component: HomePage },
+    { path: '/', component: LandingPage },
+    { path: '/admin', component: AdminPlaceholderPage },
+    { path: '/shop', component: HomePage },
     { path: '/theme', component: ThemeHallPage },
     { path: '/category/:tab', component: CategoryPage },
     { path: '/product/:id', component: ProductDetailPage },

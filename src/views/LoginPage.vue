@@ -26,7 +26,7 @@ const auth = useAuthStore()
 const ui = useUiStore()
 
 // 登入成功後導向的目的地（由 redirect query 指定，預設首頁）
-const redirectTo = () => (route.query.redirect as string) || '/'
+const redirectTo = () => (route.query.redirect as string) || '/shop'
 
 function socialLogin(provider: string) {
   auth.login()
@@ -94,7 +94,7 @@ function onSubmit() {
     <!-- Top bar -->
     <header class="relative z-10 bg-white border-b border-[var(--border-light)]">
       <div class="max-w-[1280px] mx-auto flex items-center justify-between px-8 py-2 h-14">
-        <button class="flex items-center gap-2 shrink-0" @click="router.push('/')">
+        <button class="flex items-center gap-2 shrink-0" @click="router.push('/shop')">
           <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-bg)">
             <span class="text-white font-bold text-base">X</span>
           </div>
