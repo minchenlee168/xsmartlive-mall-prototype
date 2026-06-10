@@ -80,8 +80,8 @@ watch(isMobile, () => {
 </script>
 
 <template>
-  <!-- tabs bar -->
-  <div class="w-full relative z-40" style="background: var(--tabs-bg)">
+  <!-- tabs bar：sticky 在 frame 頂端，捲動內容時保持可見 -->
+  <div class="w-full sticky top-0 z-40" style="background: var(--tabs-bg)">
     <div class="max-w-[1280px] mx-auto">
       <div class="flex items-center">
         <!-- main category tabs -->

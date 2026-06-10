@@ -1,17 +1,28 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import MemberIcon from '../components/MemberIcon.vue'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
 import { useAuthStore } from '../stores/auth'
 import { useUiStore } from '../stores/ui'
 import { useOrdersStore } from '../stores/orders'
+import { useViewportStore } from '../stores/viewport'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const ui = useUiStore()
 const ordersStore = useOrdersStore()
+const viewport = useViewportStore()
+
+/** 收件地址新增 / 編輯彈窗寬度：手機 frame 才縮窄，避免超出 390px 容器。 */
+const addrDialogWidth = computed(() => viewport.current.id === 'mobile' ? '22rem' : '28rem')
+
+/** Profile summary bar 顯示條件：平板/PC 永遠顯示；手機只在「個人帳號」分頁顯示。 */
+const showProfileBar = computed(() =>
+  viewport.current.id !== 'mobile' || activeNav.value === 'account',
+)
 
 function editProfile() {
   activeNav.value = 'account'
@@ -45,8 +56,17 @@ const accountSubItems = [
   { key: 'address', label: '收件地址' },
   { key: 'password', label: '更改密碼' },
 ]
-const activeNav = ref('account')
+/** 允許的 activeNav 值；URL `?tab=` 命中其中之一才採用。 */
+const VALID_NAVS = new Set(['orders', 'points', 'transactions', 'account', 'coupons'])
+function readTabFromRoute(): string {
+  const q = route.query.tab
+  return typeof q === 'string' && VALID_NAVS.has(q) ? q : 'account'
+}
+const activeNav = ref(readTabFromRoute())
 const activeSub = ref('profile')
+
+// 路由 query 變動時同步切換（例如從 NavBar 下拉點「紅利點數」）
+watch(() => route.query.tab, () => { activeNav.value = readTabFromRoute() })
 
 // Saved baseline — updated only after a successful save
 const snapshot = reactive({
@@ -406,9 +426,57 @@ function saveAddr() {
     <NavBar />
     <CategoryTabs />
 
-    <!-- Profile summary bar -->
-    <div class="bg-white border-b border-[#e2e8f0]">
-      <div class="max-w-[1280px] mx-auto px-4 py-5 flex flex-col @4xl:flex-row @4xl:items-center gap-5 @4xl:gap-12">
+    <!-- Profile summary bar：手機只在「個人帳號」分頁顯示；平板/PC 永遠顯示 -->
+    <div v-if="showProfileBar" class="bg-white border-b border-[#e2e8f0]">
+      <!-- 手機版：上半身份（垂直置中：頭像 / 姓名+筆 / 會員編號），下方紅利點數 vs 優惠券 左右一列 -->
+      <!-- padding 跟 main 用同一組 CSS var，紅利/優惠券列才能跟下方 card 外緣對齊 -->
+      <div class="@3xl:hidden flex flex-col items-center gap-2" style="padding: var(--page-pad-y) var(--page-pad-x)">
+        <div class="w-16 h-16 rounded-full bg-[#e2e8f0] text-[#475569] flex items-center justify-center text-2xl font-medium">
+          {{ auth.avatarLetter }}
+        </div>
+        <div class="flex items-center gap-2">
+          <p class="text-base font-bold text-[#020617]">{{ name }}</p>
+          <!-- 觸控區 ≥ 44px：用 w-10 h-10 + 居中 icon，視覺仍只看到筆 -->
+          <button
+            class="w-10 h-10 flex items-center justify-center rounded-full text-[#64748b] hover:text-[#334155] hover:bg-[#f1f5f9] active:bg-[#e2e8f0] transition-colors"
+            aria-label="編輯個人檔案"
+            @click="editProfile"
+          >
+            <i class="pi pi-pencil text-base" />
+          </button>
+        </div>
+        <p class="text-xs text-[#64748b]">{{ memberId }}</p>
+
+        <!-- 紅利點數 / 優惠券一列：寬度縮到跟下方 card 的內容區同寬（兩側各扣 card-pad） -->
+        <div
+          class="flex items-center justify-between mt-3 pt-3 border-t border-[#e2e8f0]"
+          :style="{ width: 'calc(100% - 2 * var(--card-pad))' }"
+        >
+          <button
+            class="flex items-center gap-1.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-[#f1f5f9] active:bg-[#e2e8f0] transition-colors min-h-[40px]"
+            aria-label="前往紅利點數"
+            @click="activeNav = 'points'"
+          >
+            <MemberIcon name="points" :size="18" />
+            <span class="text-sm text-[#334155]">紅利點數</span>
+            <span class="font-medium text-sm" style="color: #f59e0b">{{ auth.rewardPoints.toFixed(2) }}</span>
+            <i class="pi pi-chevron-right text-xs text-[#94a3b8] ml-0.5" />
+          </button>
+          <button
+            class="flex items-center gap-1.5 px-2 py-1.5 -mx-2 rounded-md hover:bg-[#f1f5f9] active:bg-[#e2e8f0] transition-colors min-h-[40px]"
+            aria-label="前往優惠券"
+            @click="activeNav = 'coupons'"
+          >
+            <MemberIcon name="coupon" :size="18" />
+            <span class="text-sm text-[#334155]">優惠券</span>
+            <span class="font-medium text-sm" style="color: var(--primary)">{{ auth.couponCount }} 張</span>
+            <i class="pi pi-chevron-right text-xs text-[#94a3b8] ml-0.5" />
+          </button>
+        </div>
+      </div>
+
+      <!-- 平板 / PC 版：維持原本完整排版 -->
+      <div class="hidden @3xl:block max-w-[1280px] mx-auto px-4 py-5 @4xl:flex @4xl:items-center @4xl:gap-12">
         <!-- Identity -->
         <div class="flex items-center gap-4 flex-1 min-w-0">
           <div class="w-14 h-14 @3xl:w-16 @3xl:h-16 rounded-full bg-[#e2e8f0] text-[#475569] flex items-center justify-center text-2xl font-medium shrink-0 overflow-hidden">
@@ -421,10 +489,8 @@ function saveAddr() {
           </div>
         </div>
 
-        <!-- Points + Coupons group:
-             mobile = stacked, tablet (@3xl) = side-by-side card row, PC (@4xl) = inline with identity -->
-        <div class="flex flex-col @3xl:flex-row @4xl:contents gap-3 @3xl:gap-0 @3xl:rounded-[12px] @3xl:bg-[#f8fafc] @3xl:border @3xl:border-[#e2e8f0] @4xl:bg-transparent @4xl:border-0 @4xl:rounded-none">
-          <!-- Reward points -->
+        <!-- Points + Coupons group：平板並排 card row、PC 與身份同列 -->
+        <div class="flex flex-col @3xl:flex-row @4xl:contents gap-3 mt-5 @4xl:mt-0 @3xl:gap-0 @3xl:rounded-[12px] @3xl:bg-[#f8fafc] @3xl:border @3xl:border-[#e2e8f0] @4xl:bg-transparent @4xl:border-0 @4xl:rounded-none">
           <div class="flex flex-col gap-1.5 shrink-0 @3xl:flex-1 @3xl:p-4 @4xl:p-0">
             <div class="flex items-center gap-2">
               <MemberIcon name="points" :size="20" class="shrink-0" />
@@ -434,10 +500,8 @@ function saveAddr() {
             <p class="text-sm text-[#334155]">目前剩餘點數：<span style="color: #f59e0b" class="font-medium">{{ auth.rewardPoints.toFixed(2) }}</span></p>
           </div>
 
-          <!-- divider between the two on tablet only -->
           <div class="hidden @3xl:block @4xl:hidden w-px bg-[#e2e8f0] self-stretch my-3" />
 
-          <!-- Coupons -->
           <div class="flex flex-col gap-1.5 shrink-0 @3xl:flex-1 @3xl:p-4 @4xl:p-0">
             <div class="flex items-center gap-2">
               <MemberIcon name="coupon" :size="20" class="shrink-0" />
@@ -450,10 +514,21 @@ function saveAddr() {
       </div>
     </div>
 
+    <!-- 個人帳號子分頁下拉（手機 only；放在 profile summary bar 下方）-->
+    <div v-if="activeNav === 'account'" class="@3xl:hidden px-4 pt-3">
+      <Select
+        v-model="activeSub"
+        :options="accountSubItems"
+        option-label="label"
+        option-value="key"
+        class="w-full"
+      />
+    </div>
+
     <!-- Content -->
     <main class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col @4xl:flex-row" style="padding: var(--page-pad-y) var(--page-pad-x); gap: var(--stack-gap)">
-      <!-- Sidebar — hidden on the coupons page (full-width per design) -->
-      <aside v-if="activeNav !== 'coupons'" class="shrink-0 w-full @4xl:w-[220px]">
+      <!-- Sidebar — 手機隱藏（改走下方 fixed bar）；平板以上仍是上方/側邊 card -->
+      <aside v-if="activeNav !== 'coupons'" class="hidden @3xl:block shrink-0 w-full @4xl:w-[220px]">
         <div class="bg-white rounded-[12px] shadow-card card-pad">
           <template v-for="item in navItems" :key="item.key">
             <button
@@ -896,9 +971,12 @@ function saveAddr() {
                 {{ addr.address }}
               </div>
             </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <Button icon="pi pi-pencil" severity="secondary" outlined size="small" @click="openEditAddr(addr)" />
-              <Button icon="pi pi-trash" severity="danger" outlined size="small" @click="askDeleteAddr(addr.id)" />
+            <!-- 手機：編輯 / 刪除一排、設為預設在下方；@3xl 以上同一列 -->
+            <div class="flex flex-col @3xl:flex-row items-end @3xl:items-center gap-2 shrink-0">
+              <div class="flex items-center gap-2">
+                <Button icon="pi pi-pencil" severity="secondary" outlined size="small" @click="openEditAddr(addr)" />
+                <Button icon="pi pi-trash" severity="danger" outlined size="small" @click="askDeleteAddr(addr.id)" />
+              </div>
               <Button v-if="!addr.isDefault" label="設為預設" outlined size="small" class="whitespace-nowrap" @click="setDefaultAddr(addr.id)" />
             </div>
           </div>
@@ -954,13 +1032,27 @@ function saveAddr() {
       </div>
     </main>
 
+    <!-- 手機底部固定 bar：4 個主分頁（我的訂單 / 紅利點數 / 交易記錄查詢 / 個人帳號） -->
+    <nav class="@3xl:hidden sticky bottom-0 z-30 bg-white border-t border-[#e2e8f0] flex">
+      <button
+        v-for="item in navItems"
+        :key="item.key"
+        class="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 transition-colors"
+        :style="activeNav === item.key ? 'color: var(--primary)' : 'color: #64748b'"
+        @click="activeNav = item.key; if (item.key === 'account' && !activeSub) activeSub = 'profile'"
+      >
+        <MemberIcon :name="(item.key as 'orders' | 'points' | 'transactions' | 'account')" :size="22" />
+        <span class="text-[11px] font-medium">{{ item.label }}</span>
+      </button>
+    </nav>
+
     <!-- Add / Edit address dialog -->
     <Dialog
       v-model:visible="addrDrawerOpen"
       modal
       :draggable="false"
       :header="(addrDrawerMode === 'edit' ? '編輯' : '新增') + (addressTab === 'home' ? '宅配地址' : '超商門市')"
-      :style="{ width: '28rem' }"
+      :style="{ width: addrDialogWidth }"
     >
       <div class="flex flex-col gap-4">
         <!-- Store: chain picker -->

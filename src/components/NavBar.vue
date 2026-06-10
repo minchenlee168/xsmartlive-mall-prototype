@@ -20,6 +20,12 @@ function goMember() {
   router.push('/member')
 }
 
+/** 從下拉選單跳到會員中心特定分頁（紅利點數 / 優惠券）。 */
+function goMemberTab(tab: 'points' | 'coupons' | 'orders' | 'transactions' | 'account') {
+  userMenuOpen.value = false
+  router.push({ path: '/member', query: { tab } })
+}
+
 // Language picker
 const langMenuOpen = ref(false)
 function toggleLangMenu() { langMenuOpen.value = !langMenuOpen.value }
@@ -279,7 +285,7 @@ function pickKeyword(kw: string) {
                 </button>
                 <button
                   class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
-                  @click="goMember"
+                  @click="goMemberTab('points')"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
                     <span class="flex items-center gap-1">
@@ -291,7 +297,7 @@ function pickKeyword(kw: string) {
                 </button>
                 <button
                   class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
-                  @click="goMember"
+                  @click="goMemberTab('coupons')"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
                     <span class="flex items-center gap-2">
@@ -386,7 +392,7 @@ function pickKeyword(kw: string) {
                 </button>
                 <button
                   class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
-                  @click="goMember"
+                  @click="goMemberTab('points')"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
                     <span class="flex items-center gap-1">
@@ -398,7 +404,7 @@ function pickKeyword(kw: string) {
                 </button>
                 <button
                   class="w-full flex items-center h-[50px] px-3 border-b border-[#e2e8f0] hover:bg-gray-50 transition-colors text-left"
-                  @click="goMember"
+                  @click="goMemberTab('coupons')"
                 >
                   <span class="flex-1 flex items-center justify-between pl-[14px]">
                     <span class="flex items-center gap-2">

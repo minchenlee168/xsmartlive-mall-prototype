@@ -21,13 +21,16 @@ const showControls = computed(() => route.path !== '/' && !isFullscreen.value)
 const frameStyle = computed(() => {
   if (isFullscreen.value) return {}
   const w = viewportStore.current.width
+  const h = viewportStore.current.height
   if (!w) return {}
   return {
     width: `${w}px`,
     margin: '0 auto',
     boxShadow: '0 0 0 1px #e2e8f0, 0 8px 32px rgba(0,0,0,0.12)',
-    minHeight: '100vh',
-    overflow: 'hidden',
+    // 模擬實機螢幕高度：內容超過 → frame 內部 scroll，不撐高外層
+    height: h ? `${h}px` : '100vh',
+    overflowY: 'auto' as const,
+    overflowX: 'hidden' as const,
   }
 })
 

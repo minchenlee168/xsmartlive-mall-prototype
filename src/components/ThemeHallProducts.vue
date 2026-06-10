@@ -15,10 +15,39 @@ const vp = computed(() => useViewportStore().current.id)
 // 一排顯示張數（PC 5 / 平板 3 / 手機 2）；商品共 10 個，超過可顯示數即用左右箭頭切換
 const perView = computed(() => (vp.value === 'mobile' ? 2 : vp.value === 'tablet' ? 3 : 5))
 const items = products.slice(0, 10)
+
+// 手機改用 horizontal scroll（隱藏左右切換鈕），平板 / PC 維持 Carousel。
+const isMobile = computed(() => vp.value === 'mobile')
 </script>
 
 <template>
+  <!-- 手機：橫向卷軸滑動，每卡 45% 寬，snap 對齊 -->
+  <div
+    v-if="isMobile"
+    class="flex overflow-x-auto gap-3 px-1 pb-2 snap-x snap-mandatory hide-scrollbar"
+  >
+    <div
+      v-for="data in items"
+      :key="data.id"
+      class="shrink-0 snap-start"
+      style="width: 45%"
+    >
+      <ProductCard
+        :id="data.id"
+        :name="data.name"
+        :price="data.price"
+        :original="data.original"
+        :has-variant="data.hasVariant"
+        :stock="data.stock"
+        :image="data.image"
+        :simple="props.simple"
+      />
+    </div>
+  </div>
+
+  <!-- 平板 / PC：Carousel + 左右切換 -->
   <Carousel
+    v-else
     :key="perView"
     :value="items"
     :num-visible="perView"
@@ -77,5 +106,14 @@ const items = products.slice(0, 10)
 :deep(.p-carousel-next-button .p-icon) {
   width: 18px;
   height: 18px;
+}
+
+/* 手機橫向卷軸：隱藏 scrollbar 視覺，仍可滑動 */
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 </style>
