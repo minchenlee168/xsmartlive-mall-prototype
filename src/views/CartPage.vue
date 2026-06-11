@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '../components/NavBar.vue'
 import CategoryTabs from '../components/CategoryTabs.vue'
@@ -12,6 +12,15 @@ const isPC = computed(() => vp.value === 'pc')
 
 const cart = useCartStore()
 const groups = computed(() => cart.groups)
+
+// 不同配送方式 → 阻擋共同結帳並彈窗請使用者拆單
+const mixedShippingDialog = ref(false)
+const mixedShippingMethods = ref<string[]>([])
+/** 找到該購物車對應的配送方式 tag（label 含「配送」字樣的那個）。 */
+function getGroupShipping(group: CartGroup): string | null {
+  const t = group.tags.find(tg => tg.label.includes('配送'))
+  return t ? t.label : null
+}
 
 function isGroupAllChecked(group: CartGroup) {
   return group.items.length > 0 && group.items.every(i => i.checked)
@@ -42,6 +51,16 @@ function isGroupLocked(group: CartGroup) {
   return group.tags.some(t => t.label === '禁止棄標')
 }
 function goCheckout() {
+  // 勾選的群組若包含不同配送方式 → 不能合併結帳，跳提示請拆單
+  const checkedGroups = groups.value.filter(g => g.items.some(i => i.checked))
+  const methods = Array.from(new Set(
+    checkedGroups.map(getGroupShipping).filter((s): s is string => !!s),
+  ))
+  if (methods.length > 1) {
+    mixedShippingMethods.value = methods
+    mixedShippingDialog.value = true
+    return
+  }
   router.push('/checkout')
 }
 function goProduct(productId?: number) {
@@ -92,14 +111,20 @@ function goProduct(productId?: number) {
             />
             <label :for="'grp-' + group.id" class="text-sm text-[#334155] cursor-pointer">全選</label>
           </div>
-          <span class="font-medium text-[17.5px] text-[#334155]">{{ group.sellerName }}</span>
-          <div class="flex items-center gap-2">
-            <Tag
-              v-for="tag in group.tags"
-              :key="tag.label"
-              :value="tag.label"
-              :severity="tag.type"
-            />
+          <!-- 名稱 + tag：手機版直式（避免名稱過長與 tag 一起折行），其他維持橫式 -->
+          <div
+            class="flex min-w-0 flex-1"
+            :class="vp === 'mobile' ? 'flex-col items-start gap-1' : 'flex-row items-center gap-2'"
+          >
+            <span class="font-medium text-[17.5px] text-[#334155] truncate max-w-full">{{ group.sellerName }}</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <Tag
+                v-for="tag in group.tags"
+                :key="tag.label"
+                :value="tag.label"
+                :severity="tag.type"
+              />
+            </div>
           </div>
         </div>
 
@@ -156,7 +181,7 @@ function goProduct(productId?: number) {
 
               <!-- Price + Delete -->
               <div class="flex items-center justify-between shrink-0" :class="isPC ? 'gap-8' : 'mt-1'">
-                <div class="flex flex-col items-end">
+                <div class="flex flex-col items-start">
                   <span v-if="item.original" class="text-sm text-[#64748b] line-through">${{ (item.original * item.qty).toLocaleString() }}</span>
                   <span class="font-medium leading-none" style="color: var(--primary)" :class="isPC ? 'text-[24px]' : 'text-base'">${{ (item.price * item.qty).toLocaleString() }}</span>
                 </div>
@@ -212,8 +237,8 @@ function goProduct(productId?: number) {
 
         <!-- Group subtotal -->
         <div class="cart-divider-top flex items-center justify-end gap-4 px-[var(--card-pad)] py-4">
-          <span class="text-[18px] text-[#334155]">訂單金額小計</span>
-          <span class="text-[30px] font-bold" style="color: var(--primary)">${{ groupSubtotal(group).toLocaleString() }}</span>
+          <span class="text-[#334155]" :class="vp === 'mobile' ? 'text-[14px]' : 'text-[18px]'">訂單金額小計</span>
+          <span class="font-bold" style="color: var(--primary)" :class="vp === 'mobile' ? 'text-[20px]' : 'text-[30px]'">${{ groupSubtotal(group).toLocaleString() }}</span>
         </div>
       </div>
     </main>
@@ -253,6 +278,45 @@ function goProduct(productId?: number) {
         </div>
       </div>
     </div>
+
+    <!-- 不同配送方式提示：阻擋共同結帳；遮罩限制在 frame 內，彈窗寬度也跟 frame 對齊 -->
+    <Dialog
+      v-model:visible="mixedShippingDialog"
+      modal
+      :draggable="false"
+      :dismissable-mask="true"
+      :style="{
+        width: vp === 'mobile' ? 'calc(var(--frame-width, 100vw) - 32px)' : '420px',
+        maxWidth: vp === 'mobile' ? 'calc(var(--frame-width, 100vw) - 32px)' : '420px',
+      }"
+      :pt="{
+        mask: {
+          style: 'left: var(--frame-left, 0); width: var(--frame-width, 100vw); height: calc(100vh - var(--frame-bottom, 0px))',
+        },
+        header: { style: 'padding: 16px 20px' },
+        content: { style: 'padding: 0 20px 16px' },
+        footer: { style: 'padding: 12px 20px' },
+      }"
+    >
+      <template #header>
+        <div class="flex items-center gap-2">
+          <i class="pi pi-exclamation-triangle" style="color: #ef4444; font-size: 18px" />
+          <span class="font-bold text-[#020617]" style="font-size: 16px">無法合併結帳</span>
+        </div>
+      </template>
+      <div class="flex flex-col gap-2 text-[14px] text-[#334155]">
+        <p>所選購物車包含不同配送方式，無法一起結帳：</p>
+        <ul class="list-disc pl-5">
+          <li v-for="m in mixedShippingMethods" :key="m">{{ m }}</li>
+        </ul>
+        <p class="text-[#64748b]">請分別勾選同一配送方式的購物車後再進行結帳。</p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end w-full">
+          <Button label="我知道了" @click="mixedShippingDialog = false" />
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>
 

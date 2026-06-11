@@ -58,7 +58,21 @@ const coupons: Coupon[] = [
     v-model:visible="visible"
     position="bottom"
     header="可使用優惠券"
-    :style="{ width: drawerWidth, maxWidth: '100vw', left: 0, right: 0, margin: '0 auto', height: 'auto', maxHeight: '80vh' }"
+    :style="{
+      width: 'var(--frame-width, ' + drawerWidth + ')',
+      maxWidth: '100vw',
+      left: 'var(--frame-left, 0)',
+      right: 'auto',
+      bottom: 'var(--frame-bottom, 0)',
+      margin: '0',
+      height: 'auto',
+      maxHeight: '80vh',
+    }"
+    :pt="{
+      mask: {
+        style: 'left: var(--frame-left, 0); width: var(--frame-width, 100vw); height: calc(100vh - var(--frame-bottom, 0px))',
+      },
+    }"
   >
     <!-- Coupon list（卡片樣式比照結帳頁） -->
     <div class="max-w-[680px] mx-auto flex flex-col gap-3">

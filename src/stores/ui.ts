@@ -17,5 +17,9 @@ export const useUiStore = defineStore('ui', () => {
   const routeLoading = ref(false)
   function setRouteLoading(v: boolean) { routeLoading.value = v }
 
-  return { toastVisible, toastMessage, toast, routeLoading, setRouteLoading }
+  // 底部抽屜開啟時鎖 frame scroll，讓抽屜底部能對齊 frame 視覺底部
+  const frameScrollLocked = ref(false)
+  function setFrameScrollLocked(v: boolean) { frameScrollLocked.value = v }
+
+  return { toastVisible, toastMessage, toast, routeLoading, setRouteLoading, frameScrollLocked, setFrameScrollLocked }
 })

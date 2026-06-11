@@ -19,8 +19,18 @@ watch(() => route.query.sub, (sub) => {
   activeSubCategory.value = (sub as string) ?? ''
 })
 
+// 切換大分類後，子分類自動清空（活躍 sub 不會跨大分類殘留）
+watch(() => route.params.tab, () => {
+  activeSubCategory.value = ''
+})
+
 const viewport = useViewportStore()
 const vp = computed(() => viewport.current.id)
+
+// 手機版：選完子分類後自動收起篩選面板
+watch(activeSubCategory, () => {
+  if (vp.value === 'mobile') sidebarOpen.value = false
+})
 const gridCols = computed(() =>
   vp.value === 'pc' ? 'grid-cols-4' : vp.value === 'tablet' ? 'grid-cols-3' : 'grid-cols-2',
 )

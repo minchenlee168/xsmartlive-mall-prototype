@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import FloatingControls from './components/FloatingControls.vue'
 import PageLoading from './components/PageLoading.vue'
@@ -9,6 +9,7 @@ import { useUiStore } from './stores/ui'
 const viewportStore = useViewportStore()
 const ui = useUiStore()
 const route = useRoute()
+const frameRef = ref<HTMLElement | null>(null)
 // 後台與直播抽獎頁：全螢幕、隱藏行動裝置 viewport frame 與浮動控制按鈕
 const isFullscreen = computed(() => (
   route.path === '/admin'
@@ -35,6 +36,36 @@ const frameStyle = computed(() => {
 })
 
 const isConstrained = computed(() => !isFullscreen.value && !!viewportStore.current.width)
+
+/**
+ * 把 frame 的視窗座標暴露成 CSS 變數，給 position:fixed 抽屜
+ * 用「frame 視覺底部 / 中心 / 寬度」作為定位，避免黏住瀏覽器視窗底部跑出 frame 外。
+ */
+function updateFrameVars(): void {
+  if (!frameRef.value) {
+    document.documentElement.style.removeProperty('--frame-bottom')
+    document.documentElement.style.removeProperty('--frame-left')
+    document.documentElement.style.removeProperty('--frame-width')
+    return
+  }
+  const rect = frameRef.value.getBoundingClientRect()
+  document.documentElement.style.setProperty('--frame-bottom', `${Math.max(0, window.innerHeight - rect.bottom)}px`)
+  document.documentElement.style.setProperty('--frame-left', `${rect.left}px`)
+  document.documentElement.style.setProperty('--frame-width', `${rect.width}px`)
+}
+
+onMounted(() => {
+  void nextTick(updateFrameVars)
+  window.addEventListener('resize', updateFrameVars)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateFrameVars)
+})
+
+// 切換裝置 / 進出全螢幕時重新計算
+watch([() => viewportStore.current.id, isFullscreen], () => {
+  void nextTick(updateFrameVars)
+})
 </script>
 
 <template>
@@ -48,7 +79,7 @@ const isConstrained = computed(() => !isFullscreen.value && !!viewportStore.curr
     </div>
 
     <!-- viewport frame -->
-    <div :style="frameStyle" class="@container">
+    <div ref="frameRef" :style="frameStyle" class="@container">
       <RouterView />
     </div>
   </div>

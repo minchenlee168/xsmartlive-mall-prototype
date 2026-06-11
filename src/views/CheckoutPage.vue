@@ -296,6 +296,7 @@ const shippingMethodLabel = computed(() => {
 })
 const selectedHome = computed(() => homeAddresses.value.find(a => a.id === selectedHomeId.value))
 const selectedStore = computed(() => storeAddresses.value.find(a => a.id === selectedStoreId.value))
+
 const rewardPoints = ref<number | null>(null)
 const shoppingCredit = ref<number | null>(null)
 const paymentMethod = ref('credit')
@@ -340,13 +341,13 @@ const totalSaved = computed(() =>
 
     <!-- Page header -->
     <div>
-      <div class="max-w-[1280px] mx-auto px-4 py-6 flex items-center gap-3">
+      <div class="max-w-[1280px] mx-auto px-4 py-[22px] flex items-center gap-3">
         <Button icon="pi pi-arrow-left" severity="secondary" text rounded @click="router.back()" />
         <h1 class="font-bold text-[#020617] text-2xl">結帳</h1>
       </div>
     </div>
 
-    <main class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" :style="{ padding: `var(--page-pad-y) ${isPC ? '0' : 'var(--page-pad-x)'} 120px`, gap: 'var(--stack-gap)' }">
+    <main class="flex-1 max-w-[1280px] w-full mx-auto flex flex-col" :style="{ padding: `0 ${isPC ? '0' : 'var(--page-pad-x)'} 120px`, gap: 'var(--stack-gap)' }">
       <!-- 商品明細（不分賣場，單一列表） -->
       <section class="bg-white rounded-[12px] shadow-card">
         <div class="px-4 py-3 cart-divider">
@@ -497,14 +498,11 @@ const totalSaved = computed(() =>
         </div>
         <div class="card-pad flex flex-col gap-4">
           <div class="flex flex-wrap items-center gap-2 text-sm text-[#334155]">
-            <span class="font-medium w-[60px]">紅利金</span>
+            <span class="font-medium w-[60px]">紅利點數</span>
             <span>使用</span>
-            <InputGroup class="w-[160px]">
-              <InputGroupAddon>NT$</InputGroupAddon>
-              <InputNumber v-model="rewardPoints" :min="0" />
-            </InputGroup>
-            <span>元</span>
-            <span class="text-[#64748b]">/ 尚有紅利金 <span style="color: var(--primary)">$100</span> 元可使用</span>
+            <InputNumber v-model="rewardPoints" :min="0" class="w-[160px]" />
+            <span>點</span>
+            <span class="text-[#64748b]">/ 尚有紅利點數 <span style="color: var(--primary)">100</span> 點可使用</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-sm text-[#334155]">
             <span class="font-medium w-[60px]">購物金</span>
@@ -515,6 +513,7 @@ const totalSaved = computed(() =>
             </InputGroup>
             <span>元</span>
             <span class="text-[#64748b]">/ 尚有購物金 <span style="color: var(--primary)">$500</span> 元可使用</span>
+            <span class="text-[12px] font-medium" style="color: #ef4444">※ 要確認是否待移除</span>
           </div>
         </div>
       </section>
@@ -548,28 +547,31 @@ const totalSaved = computed(() =>
           <span class="text-[#334155]">多件優惠折抵</span>
           <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(multiItemDiscount).toLocaleString() }}</span>
 
-          <!-- 符合「滿千免運」 + 運費折抵 -->
-          <span class="justify-self-end flex items-center gap-1 text-[13px]" style="color: var(--primary)">
+          <!-- 符合『滿千免運』提示 → 自成一列、置於運費折抵上方 -->
+          <div class="col-span-3 flex justify-end items-center gap-1 text-[13px]" style="color: var(--primary)">
             <i class="pi pi-truck text-[12px]" />
             符合『滿千免運』
-          </span>
+          </div>
+          <!-- 運費折抵 -->
+          <div></div>
           <span class="text-[#334155]">運費折抵</span>
           <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(shippingDiscount).toLocaleString() }}</span>
 
-          <!-- 已套用優惠券 + 優惠券折扣（顯示實際套用的券） -->
+          <!-- 已套用優惠券提示 → 自成一列、置於優惠券折扣上方 -->
           <template v-if="appliedCoupon">
-            <span class="justify-self-end flex items-center gap-1 text-[13px]" style="color: var(--primary)">
+            <div class="col-span-3 flex justify-end items-center gap-1 text-[13px]" style="color: var(--primary)">
               <i class="pi pi-ticket text-[12px]" />
               已套用『{{ appliedCoupon.title }}』
-            </span>
+            </div>
+            <div></div>
             <span class="text-[#334155]">優惠券折扣</span>
             <span class="text-right" style="color: #ef4444">- $ {{ Math.abs(couponDiscount).toLocaleString() }}</span>
           </template>
 
-          <!-- 紅利金 -->
+          <!-- 紅利點數 -->
           <template v-if="rewardPointsNum > 0">
             <div></div>
-            <span class="text-[#334155]">紅利金折抵</span>
+            <span class="text-[#334155]">紅利點數折抵</span>
             <span class="text-right" style="color: #ef4444">- $ {{ rewardPointsNum.toLocaleString() }}</span>
           </template>
 
@@ -906,16 +908,25 @@ const totalSaved = computed(() =>
 .cart-divider-top::before { top: 0; }
 
 /* ===== Drawer ===== */
+/*
+ * 抽屜以 frame 的視覺座標定位：
+ * - --frame-bottom：frame 底部到 viewport 底部的距離（由 App.vue JS 算）
+ * - --frame-left / --frame-width：frame 在 viewport 的水平位置與寬度
+ * 沒設定變數時 fallback 到視窗座標。
+ */
 .drawer-backdrop {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: var(--frame-left, 0);
+  width: var(--frame-width, 100vw);
+  height: calc(100vh - var(--frame-bottom, 0px));
   background: rgba(0, 0, 0, 0.4);
   z-index: 100;
 }
 .drawer-panel {
   position: fixed;
-  left: 50%;
-  bottom: 0;
+  left: calc(var(--frame-left, 0px) + var(--frame-width, 100vw) / 2);
+  bottom: var(--frame-bottom, 0px);
   transform: translateX(-50%);
   z-index: 110;
   background: white;
