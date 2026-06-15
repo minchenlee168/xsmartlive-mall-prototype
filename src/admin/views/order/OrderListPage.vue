@@ -29,8 +29,8 @@ interface OrderRow {
 
 // 篩選欄位「草稿」狀態：使用者調整 UI 控件即時更新；只有按下「搜尋」才會 commit 到 applied。
 const keyword = ref('')
-const dateStart = ref<Date | null>(null)
-const dateEnd = ref<Date | null>(null)
+/** 日期區間：PrimeVue DatePicker range 模式 — 初始 null（不可為 [null, null]，否則內部會在 null.getFullYear() 噴錯）。 */
+const dateRange = ref<Date[] | null>(null)
 
 interface FilterOption { label: string; value: string }
 const shippingMethodOptions: FilterOption[] = [
@@ -199,8 +199,7 @@ function setDateRangePreset(preset: 'today' | 'last7' | 'thisMonth' | 'lastMonth
     start.setMonth(now.getMonth() - 1, 1)
     end.setMonth(now.getMonth(), 0)
   }
-  dateStart.value = start
-  dateEnd.value = end
+  dateRange.value = [start, end]
 }
 
 function onCopyOrderNo(no: string): void {
@@ -278,8 +277,8 @@ function progressItemsFor(s: OrderRow['shippingStatus']): ProgressItem[] {
             </p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <Button label="批次設定"      icon="pi pi-bolt" />
-            <Button label="預設配送設定"  icon="pi pi-star"    severity="warn"      variant="outlined" />
+            <Button label="批次設定" />
+            <Button label="預設配送設定"  severity="warn"      variant="outlined" />
             <Button
               label="顯示欄位"
               icon="pi pi-table"
@@ -311,12 +310,15 @@ function progressItemsFor(s: OrderRow['shippingStatus']): ProgressItem[] {
         <div class="flex items-center gap-3 px-5 py-3 flex-wrap">
           <InputText v-model="keyword" placeholder="搜尋訂單編號 / 買家姓名" class="!w-[260px]" />
 
-          <!-- 日期區間：兩個 DatePicker 中間夾「至」 -->
-          <div class="flex items-center gap-2">
-            <DatePicker v-model="dateStart" show-icon date-format="yy/mm/dd" placeholder="年 / 月 / 日" class="!w-[160px]" />
-            <span class="text-[13px] text-[var(--p-text-muted-color)]">至</span>
-            <DatePicker v-model="dateEnd"   show-icon date-format="yy/mm/dd" placeholder="年 / 月 / 日" class="!w-[160px]" />
-          </div>
+          <!-- 日期區間：PrimeVue DatePicker range 模式 -->
+          <DatePicker
+            v-model="dateRange"
+            selection-mode="range"
+            show-icon
+            date-format="yy/mm/dd"
+            placeholder="年 / 月 / 日  至  年 / 月 / 日"
+            class="!w-[320px]"
+          />
 
           <div class="flex items-center gap-1.5">
             <Button label="今日"     severity="secondary" variant="outlined" size="small" @click="setDateRangePreset('today')" />
