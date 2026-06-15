@@ -22,7 +22,7 @@ interface OrderRow {
   itemCount: number
   shippingMethod: string
   paymentStatus: 'paid' | 'unpaid'
-  shippingStatus: 'pending' | 'preparing' | 'shipping' | 'arrived'
+  shippingStatus: 'pending' | 'preparing' | 'shipping' | 'awaiting_receipt' | 'arrived' | 'completed' | 'cancelled'
   carrierStatus: 'unconfigured' | 'configured'
   trackingStatus: string | null
 }
@@ -33,13 +33,65 @@ const dateStart = ref<Date | null>(null)
 const dateEnd = ref<Date | null>(null)
 
 interface FilterOption { label: string; value: string }
-const shippingMethodOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '常溫宅配', value: 'normal' }, { label: '低溫宅配', value: 'cool' }, { label: '超商取貨', value: 'cvs' }]
-const paymentStatusOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '已付款', value: 'paid' }, { label: '待付款', value: 'unpaid' }]
-const shippingStatusOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '待出貨', value: 'pending' }, { label: '備貨中', value: 'preparing' }, { label: '出貨中', value: 'shipping' }, { label: '已送達', value: 'arrived' }]
-const carrierOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '黑貓宅急便', value: 'tcat' }, { label: '新竹物流', value: 'hct' }, { label: '7-11', value: 'cvs711' }]
-const paymentMethodOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '信用卡', value: 'credit' }, { label: 'ATM', value: 'atm' }, { label: '貨到付款', value: 'cod' }]
-const trackingStatusOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '已取號', value: 'taken' }, { label: '未取號', value: 'untaken' }]
-const channelOptions: FilterOption[] = [{ label: '全部', value: '' }, { label: '商城', value: 'shop' }, { label: '直播', value: 'live' }, { label: '貼文', value: 'post' }]
+const shippingMethodOptions: FilterOption[] = [
+  { label: '宅配',     value: 'home' },
+  { label: '超商配送', value: 'cvs' },
+  { label: '自取',     value: 'pickup' },
+]
+const paymentStatusOptions: FilterOption[] = [
+  { label: '已付款', value: 'paid' },
+  { label: '待付款', value: 'unpaid' },
+]
+const shippingStatusOptions: FilterOption[] = [
+  { label: '待出貨', value: 'pending' },
+  { label: '備貨中', value: 'preparing' },
+  { label: '出貨中', value: 'shipping' },
+  { label: '待收貨', value: 'awaiting_receipt' },
+  { label: '已送達', value: 'arrived' },
+  { label: '已完成', value: 'completed' },
+  { label: '已取消', value: 'cancelled' },
+]
+const carrierOptions: FilterOption[] = [
+  { label: '7-11 B2C 冷凍到府收件',       value: 'cvs711_b2c_cold' },
+  { label: '7-11 B2C 到府收件',            value: 'cvs711_b2c_normal' },
+  { label: '7-11 交貨便（門市寄件）',      value: 'cvs711_handover' },
+  { label: 'Presco 跨境物流（宅配）',      value: 'presco_home' },
+  { label: 'Presco 跨境物流（超商取貨）',  value: 'presco_cvs' },
+  { label: '全家冷凍到府收件',             value: 'fm_cold_home' },
+  { label: '全家常溫',                     value: 'fm_normal' },
+  { label: '嘉里大榮低溫',                 value: 'kerry_cold' },
+  { label: '嘉里大榮常溫',                 value: 'kerry_normal' },
+  { label: '新竹物流',                     value: 'hct' },
+  { label: '郵局（商家自建）',             value: 'post_self' },
+  { label: '黑貓宅急便',                   value: 'tcat' },
+  { label: '黑貓宅急便（門市寄件）',       value: 'tcat_handover' },
+  { label: '未分類',                       value: 'uncategorized' },
+]
+const paymentMethodOptions: FilterOption[] = [
+  { label: '信用卡一次付清', value: 'credit_once' },
+  { label: 'ATM 轉帳',       value: 'atm' },
+  { label: '轉帳匯款',       value: 'transfer' },
+  { label: '貨到付款',       value: 'cod' },
+  { label: 'LINE Pay',       value: 'line_pay' },
+  { label: 'Apple Pay',      value: 'apple_pay' },
+  { label: 'iPASS MONEY',    value: 'ipass' },
+  { label: '超商代碼',       value: 'cvs_code' },
+  { label: '數位簽',         value: 'digital_sign' },
+]
+const trackingStatusOptions: FilterOption[] = [
+  { label: '已取號', value: 'taken' },
+  { label: '未取號', value: 'untaken' },
+]
+const channelOptions: FilterOption[] = [
+  { label: '全部',         value: '' },
+  { label: '商城',         value: 'shop' },
+  { label: 'Facebook',     value: 'facebook' },
+  { label: 'LINE',         value: 'line' },
+  { label: 'Instagram',    value: 'instagram' },
+  { label: 'YouTube Live', value: 'youtube' },
+  { label: '蝦皮',         value: 'shopee' },
+  { label: 'PChome',       value: 'pchome' },
+]
 
 const filterShipping = ref('')
 const filterPayment = ref('')
@@ -126,10 +178,13 @@ function statusBadgeForPayment(s: OrderRow['paymentStatus']) {
 }
 function statusBadgeForShipping(s: OrderRow['shippingStatus']) {
   const map = {
-    pending:   { label: '待出貨', bg: '#f1f5f9', color: '#64748b' },
-    preparing: { label: '備貨中', bg: '#dbeafe', color: '#1d4ed8' },
-    shipping:  { label: '出貨中', bg: '#fef3c7', color: '#b45309' },
-    arrived:   { label: '已送達', bg: '#dcfce7', color: '#16a34a' },
+    pending:           { label: '待出貨', bg: '#f1f5f9', color: '#64748b' },
+    preparing:         { label: '備貨中', bg: '#dbeafe', color: '#1d4ed8' },
+    shipping:          { label: '出貨中', bg: '#fef3c7', color: '#b45309' },
+    awaiting_receipt:  { label: '待收貨', bg: '#ede9fe', color: '#6d28d9' },
+    arrived:           { label: '已送達', bg: '#dcfce7', color: '#16a34a' },
+    completed:         { label: '已完成', bg: '#f1f5f9', color: '#475569' },
+    cancelled:         { label: '已取消', bg: '#fee2e2', color: '#dc2626' },
   } as const
   return map[s]
 }
@@ -167,7 +222,7 @@ function openColumnSetting(event: Event): void {
 }
 
 /** 出貨狀態進度條 5 階段（待出貨 → 備貨中 → 已出貨 → 已送達 → 已完成）。 */
-interface ProgressStep { key: OrderRow['shippingStatus'] | 'completed'; label: string }
+interface ProgressStep { key: OrderRow['shippingStatus']; label: string }
 const PROGRESS_STEPS: ProgressStep[] = [
   { key: 'pending',   label: '待出貨' },
   { key: 'preparing', label: '備貨中' },
@@ -210,11 +265,12 @@ function progressItemsFor(s: OrderRow['shippingStatus']): ProgressItem[] {
             <div class="flex items-center gap-2">
               <h1 class="text-[22px] font-bold text-[var(--p-text-color)]">訂單管理</h1>
               <button
-                v-tooltip.top="'重新整理'"
-                class="size-[28px] flex items-center justify-center rounded-full text-[var(--p-text-muted-color)] hover:bg-[var(--p-content-hover-background)]"
+                v-tooltip.top="'手動刷新訂單資訊'"
+                class="size-[28px] flex items-center justify-center rounded-full hover:bg-[var(--p-primary-50)]"
+                style="color: var(--p-primary-color)"
                 @click="onRefresh"
               >
-                <i class="pi pi-refresh" style="font-size: 14px"></i>
+                <i class="pi pi-sync" style="font-size: 15px"></i>
               </button>
             </div>
             <p class="text-[13px] text-[var(--p-text-muted-color)]">
@@ -276,8 +332,8 @@ function progressItemsFor(s: OrderRow['shippingStatus']): ProgressItem[] {
           <Select v-model="filterShipping"      :options="shippingMethodOptions" option-label="label" option-value="value" placeholder="出貨方式" class="!w-[140px]" />
           <Select v-model="filterPayment"       :options="paymentStatusOptions"  option-label="label" option-value="value" placeholder="付款狀態" class="!w-[140px]" />
           <Select v-model="filterShippingStatus" :options="shippingStatusOptions" option-label="label" option-value="value" placeholder="出貨狀態" class="!w-[140px]" />
-          <Select v-model="filterCarrier"       :options="carrierOptions"        option-label="label" option-value="value" placeholder="物流商"   class="!w-[140px]" />
-          <Select v-model="filterPaymentMethod" :options="paymentMethodOptions"  option-label="label" option-value="value" placeholder="付款方式" class="!w-[140px]" />
+          <Select v-model="filterCarrier"       :options="carrierOptions"        option-label="label" option-value="value" placeholder="物流商"   class="!w-[140px]" scroll-height="auto" />
+          <Select v-model="filterPaymentMethod" :options="paymentMethodOptions"  option-label="label" option-value="value" placeholder="付款方式" class="!w-[140px]" scroll-height="auto" />
           <Select v-model="filterTracking"      :options="trackingStatusOptions" option-label="label" option-value="value" placeholder="取號狀態" class="!w-[140px]" />
           <Select v-model="filterChannel"       :options="channelOptions"        option-label="label" option-value="value" placeholder="購買通路" class="!w-[140px]" />
         </div>
