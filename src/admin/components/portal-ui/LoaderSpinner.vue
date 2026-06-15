@@ -1,56 +1,51 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed } from 'vue'
+import logoMark from '@/admin/assets/logo-mark.svg'
 
+/**
+ * 後台 loading 動畫：使用品牌 logo-mark 配合 Y 軸翻轉動畫。
+ * 取代原本 12 條 bar 的 spinner，讓 loading 視覺有品牌感。
+ */
 const props = defineProps<{
-  size?: string | number;
-}>();
+  size?: string | number
+}>()
 
-const DEFAULT_SIZE = '48px';
-
-const sizeValue = computed(() => typeof props.size === 'number' ? `${props.size}px` : props.size || DEFAULT_SIZE);
-
-// barWidth、barHeight、radius 比例可調整
-const barWidth = computed(() => `calc(${sizeValue.value} / 12)`);
-const barHeight = computed(() => `calc(${sizeValue.value} / 4)`);
-const radius = computed(() => `calc(${sizeValue.value} / 2)`);
+const DEFAULT_SIZE = '48px'
+const sizeValue = computed(() =>
+  typeof props.size === 'number' ? `${props.size}px` : props.size || DEFAULT_SIZE,
+)
 </script>
 
 <template>
   <div
-    class="relative will-change-auto"
-    :style="{ width: sizeValue, height: sizeValue }"
+    class="relative inline-flex items-center justify-center"
+    :style="{ width: sizeValue, height: sizeValue, perspective: '200px' }"
   >
-    <div
-      v-for="i in 12"
-      :key="i"
-      class="
-        bg-primary dark:bg-primary-300 animate-spinner-fade
-        absolute top-1/2
-        left-1/2
-        origin-center rounded-full
-      "
-      :style="{
-        width: barWidth,
-        height: barHeight,
-        transform: `rotate(${(i - 1) * 30}deg) translateY(calc(-1 * ${radius}))`,
-        animationDelay: `${-((12 - i) * 0.1)}s`,
-      }"
+    <img
+      :src="logoMark"
+      alt="loading"
+      class="loader-logo block select-none pointer-events-none"
+      :style="{ width: sizeValue, height: sizeValue }"
     />
   </div>
 </template>
 
 <style scoped>
-@keyframes spinner-fade {
+@keyframes loader-flip {
   0% {
-    opacity: 1;
+    transform: rotateY(0deg);
   }
-
+  50% {
+    transform: rotateY(180deg);
+  }
   100% {
-    opacity: 0;
+    transform: rotateY(360deg);
   }
 }
 
-.animate-spinner-fade {
-  animation: spinner-fade 1.2s linear infinite;
+.loader-logo {
+  animation: loader-flip 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transform-style: preserve-3d;
+  backface-visibility: visible;
 }
 </style>

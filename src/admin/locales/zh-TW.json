@@ -6,6 +6,7 @@
     "live": "直播收單區",
     "live_order": "直播收單",
     "live_order_post": "貼文收單",
+    "live_order_post_list": "貼文收單(列表式)",
     "live_order_community": "社群收單",
     "live_records": "收單紀錄",
     "order": "訂單管理",
@@ -21,6 +22,7 @@
   "route": {
     "live_order": "直播收單",
     "live_order_post": "貼文收單",
+    "live_order_post_list": "貼文收單(列表式)",
     "live_order_community": "社群收單",
     "live_records": "收單紀錄",
     "order_list": "訂單列表",

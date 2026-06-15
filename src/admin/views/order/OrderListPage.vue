@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 /**
  * 訂單管理 → 訂單列表頁。
@@ -205,7 +205,16 @@ function setDateRangePreset(preset: 'today' | 'last7' | 'thisMonth' | 'lastMonth
 function onCopyOrderNo(no: string): void {
   navigator.clipboard?.writeText(no)
 }
-function onRefresh(): void {}
+// ── Loading 狀態：初始載入 + 手動刷新都會顯示 LoaderSpinner 蓋在表格上 ──
+const isLoading = ref(true)
+onMounted(() => {
+  // 模擬初始載入 1.2 秒
+  setTimeout(() => { isLoading.value = false }, 1200)
+})
+function onRefresh(): void {
+  isLoading.value = true
+  setTimeout(() => { isLoading.value = false }, 1500)
+}
 
 // ── 顯示欄位設定（出貨狀態 badge / 進度條） ─────────
 type ShippingDisplayMode = 'badge' | 'progress'
@@ -373,7 +382,16 @@ function progressItemsFor(s: OrderRow['shippingStatus']): ProgressItem[] {
       }"
     >
       <template #content>
-        <div class="p-5">
+        <div class="p-5 relative">
+          <!-- Loading 蓋層：用 PrimeVue 標準 ProgressSpinner，不走品牌 logo 動畫 -->
+          <div
+            v-if="isLoading"
+            class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[var(--p-content-background)]/85 backdrop-blur-sm rounded-[8px]"
+          >
+            <ProgressSpinner style="width: 48px; height: 48px" stroke-width="4" animation-duration=".9s" />
+            <span class="text-[13px] text-[var(--p-text-muted-color)]">載入中…</span>
+          </div>
+
           <DataTable
             :value="filtered"
             :striped-rows="true"

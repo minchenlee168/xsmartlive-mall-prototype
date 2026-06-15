@@ -134,13 +134,23 @@
             <p class="text-[14px] leading-normal text-[var(--p-text-muted-color)]">{{ t('live_order.empty.no_product_hint') }}</p>
           </div>
           <div v-else class="flex-1 overflow-y-auto">
-            <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
+            <!-- 列表式貼文收單：用 LiveProductTable，其他模式維持商品卡 grid -->
+            <LiveProductTable
+              v-if="isPostListMode"
+              :products="selectedProducts"
+              :sources="sources"
+              :ordering-enabled="hasAnySource"
+              @delete="onDeleteProduct"
+              @end-ordering="onCardEndOrdering"
+            />
+            <div v-else class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
               <LiveProductCard
                 v-for="p in selectedProducts"
                 :key="p.id"
                 :product="p"
                 :ordering-enabled="hasAnySource"
                 :is-post-mode="isPostMode"
+                :locked="biddingLiveId !== null && p.id !== biddingLiveId && p.status === 'live'"
                 v-model:status="p.status"
                 @delete="onDeleteProduct"
                 @end-ordering="onCardEndOrdering"
@@ -172,8 +182,9 @@
         :sources="sources"
         :products="selectedProducts"
         :show-comments="showComments"
-        :use-table="false"
+        :use-table="isPostListMode"
         :is-post-mode="isPostMode"
+        :bidding-live-id="biddingLiveId"
         @pick-source="onPickSource"
         @remove-source="onRemoveSource"
         @delete-product="onDeleteProduct"
@@ -227,6 +238,7 @@ import PanelSettingsDialog, { type PanelSettings } from './components/PanelSetti
 import AddBundleDialog, { type BundlePickPayload } from './components/AddBundleDialog.vue'
 import EndOrderingSummaryDialog, { type EndOrderingPayload } from './components/EndOrderingSummaryDialog.vue'
 import QuickAddProductForm from './components/QuickAddProductForm.vue'
+import LiveProductTable from './components/LiveProductTable.vue'
 import { addLiveOrderRecord } from './utils/liveOrderRecords'
 import GiftFormDialog, { type GiftSubmitPayload } from './components/GiftFormDialog.vue'
 import DuplicateProductDialog from './components/DuplicateProductDialog.vue'
@@ -300,7 +312,11 @@ const route = useRoute()
  * - `live.order.post` → 貼文收單（無場次、無批次設定、無快速新增）
  * - `live.order.community` → 社群收單（保留完整功能）
  */
-const isPostMode = computed(() => route.name === 'live.order.post')
+const isPostMode = computed(() =>
+  route.name === 'live.order.post' || route.name === 'live.order.post.list',
+)
+/** 列表式貼文收單：body 改用 LiveProductTable 而非商品卡 grid。 */
+const isPostListMode = computed(() => route.name === 'live.order.post.list')
 
 const addProductDialogVisible = ref(false)
 const addBundleDialogVisible = ref(false)
@@ -445,25 +461,33 @@ const sessions = ref<LiveSession[]>([
 ])
 const currentSession = ref<LiveSession | null>(null)
 
-// 貼文收單沒有場次選擇器，自動把第一個場次當預設容器（純放商品 / 來源用）
 /**
- * 貼文收單沒有場次選擇器；自動建立或挑一個「貼文」收單容器。
- * 不沿用直播首播的場次名（避免「春季首播」這類直播文案出現在貼文收單）。
+ * 貼文收單獨立容器：和直播收單的 `sessions` 完全隔離，避免兩邊建立的商品 / 來源互相同步。
+ * 不放進 `sessions` 陣列，避免 SessionSelector 把它列在直播模式可選清單。
+ * name 給有意義的預設文字，結束收單彙總彈窗與收單紀錄寫入時才不會空白。
  */
+const postSession = ref<LiveSession>({
+  id: -1,
+  name: '貼文收單',
+  date: new Date().toISOString().slice(0, 10).replace(/-/g, '/'),
+  products: [],
+  sources: [],
+})
+
 /**
- * 貼文收單頁沒有場次選擇器，需要有一個內部容器承載商品 / 來源 / 留言。
- * 自動建立一個 name 為空的 LiveSession，但不 push 進 sessions 列表
- * （避免 SessionSelector 與結束收單彙總彈窗顯示「貼文收單」字眼）。
+ * 切換模式時恢復對應容器，避免直播 ↔ 貼文之間殘留 currentSession：
+ * - 進貼文模式：先保存目前直播選擇的場次，再切到 postSession
+ * - 回直播模式：恢復先前的直播場次（null 表示尚未選擇）
  */
-watch(isPostMode, (post) => {
-  if (!post) return
-  if (currentSession.value && currentSession.value.id < 0) return
-  currentSession.value = {
-    id: -1,
-    name: '',
-    date: new Date().toISOString().slice(0, 10).replace(/-/g, '/'),
-    products: [],
-    sources: [],
+let lastLiveSession: LiveSession | null = null
+watch(isPostMode, (post, oldPost) => {
+  if (post) {
+    if (oldPost !== undefined && currentSession.value !== postSession.value) {
+      lastLiveSession = currentSession.value
+    }
+    currentSession.value = postSession.value
+  } else if (oldPost !== undefined) {
+    currentSession.value = lastLiveSession
   }
 }, { immediate: true })
 
@@ -480,6 +504,15 @@ function onSessionCreate(payload: SessionCreatePayload): void {
 
 // ── 商品（綁定到當前場次）─────────────────────────
 const selectedProducts = computed<LiveProduct[]>(() => currentSession.value?.products ?? [])
+
+/**
+ * 當前場次中正在「競價 + 收單中」的商品 id；任一支競價商品 live 時其他卡片就被鎖住。
+ * 用於 OrderModeView / 空狀態 grid 把 `locked` 傳給非該卡的 LiveProductCard。
+ */
+const biddingLiveId = computed<number | null>(() => {
+  const p = selectedProducts.value.find(p => (p as Record<string, unknown>).bidding && p.status === 'live')
+  return p ? p.id : null
+})
 
 interface QuickAddProductPayload {
   id: number
@@ -775,11 +808,16 @@ function onEndSummarySave(payload: EndOrderingPayload): void {
       specs: p.specs,
     })),
   })
-  // 只把本次摘要的商品歸位
+  // 只把本次摘要的商品歸位：status 回 ready、sold / 規格 sold / 起算時間都重置，
+  // 確保下一輪重新「開始收單」時 ticker 從 0 起算、不會接續累加
   let changed = 0
   selectedProducts.value.forEach((p) => {
     if (endingProductIds.value.has(p.id) && p.status === 'live') {
       p.status = 'ready'
+      p.sold = 0
+      ;(p.startedAt as number | undefined) = undefined
+      const specs = (p.selectedSpecs?.length ? p.selectedSpecs : p.specs) ?? []
+      specs.forEach((s) => { s.sold = 0 })
       changed++
     }
   })
@@ -803,6 +841,58 @@ watch(
     })
   },
   { deep: true, immediate: true }
+)
+
+/**
+ * 競價模式互斥：場次內同一時間最多一支「競價 + 收單中」商品；
+ * 任一商品 ready→live 時，若會跟既有的競價/其他 live 衝突 → 撤回剛上 live 的那支 + 跳提示。
+ * - 競價想開始收單，但已有其他收單中商品 → 撤回競價、提示「請先暫停其他商品」
+ * - 已有競價在收單中，其他商品想開始收單 → 撤回該商品、提示「競價中無法開啟其他收單」
+ */
+let isBiddingConflictDialogOpen = false
+watch(
+  () => selectedProducts.value.map(p => ({ id: p.id, status: p.status, bidding: !!(p as Record<string, unknown>).bidding })),
+  (list, oldList) => {
+    const biddingLive = list.find(p => p.status === 'live' && p.bidding)
+    if (!biddingLive) return
+    const otherLive = list.filter(p => p.id !== biddingLive.id && p.status === 'live')
+    if (otherLive.length === 0) return
+
+    // 找出「剛從 ready 變 live」的商品，那支才是要撤回的對象
+    const justWentLive = list.find(p =>
+      p.status === 'live'
+      && oldList?.find(o => o.id === p.id)?.status !== 'live',
+    )
+    if (!justWentLive) return
+
+    const revertTarget = selectedProducts.value.find(p => p.id === justWentLive.id)
+    if (revertTarget) revertTarget.status = 'ready'
+
+    if (isBiddingConflictDialogOpen) return
+    isBiddingConflictDialogOpen = true
+
+    // 文案依據撤回的是競價 / 其他商品分別給出
+    const isBiddingBlocked = justWentLive.bidding
+    confirm.require({
+      header: isBiddingBlocked ? '無法開始競價' : '已有競價商品收單中',
+      message: isBiddingBlocked
+        ? `目前還有 ${otherLive.length} 件商品收單中，請先手動暫停所有收單中的商品後再開始競價。`
+        : '目前有競價商品正在收單中，無法同時開啟其他商品的收單。請等競價結束後再進行。',
+      icon: 'pi pi-exclamation-triangle',
+      // 強制 modal + 不可關閉 X / 不可點 mask 關閉：使用者必須按「我知道了」才能繼續操作
+      modal: true,
+      closable: false,
+      dismissableMask: false,
+      closeOnEscape: false,
+      // 用 style 隱藏 reject 按鈕（PrimeVue ConfirmDialog 沒有原生 rejectVisible prop）
+      rejectProps: { style: 'display: none' },
+      acceptProps: { label: '我知道了' },
+      accept: () => { isBiddingConflictDialogOpen = false },
+      reject: () => { isBiddingConflictDialogOpen = false },
+      onHide: () => { isBiddingConflictDialogOpen = false },
+    })
+  },
+  { deep: true },
 )
 
 const startedAt = computed<number | null>(() => {

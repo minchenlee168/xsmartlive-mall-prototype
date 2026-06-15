@@ -89,13 +89,15 @@
               option-label="label" option-value="value" class="w-full" />
           </div>
 
-          <!-- 多購物車 -->
+          <!-- 多購物車：只有結帳類型 = 多購物車-獨立結帳 才可選；一般 / 預購 → disabled -->
           <div class="flex flex-col gap-1.5">
             <span class="text-[13px] text-[var(--p-text-color)]">
               {{ t('live_order.form.field.multi_cart') }}
             </span>
             <Select v-model="form.multiCart" :options="multiCartOptions"
-              option-label="label" option-value="value" :placeholder="t('live_order.form.placeholder.multi_cart_name')" class="w-full" />
+              option-label="label" option-value="value"
+              :disabled="form.checkoutType !== '多購物車-獨立結帳'"
+              :placeholder="t('live_order.form.placeholder.multi_cart_name')" class="w-full" />
           </div>
 
           <!-- +1 數量限制 -->

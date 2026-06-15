@@ -28,6 +28,7 @@
             :product="p"
             :ordering-enabled="sources.length > 0"
             :is-post-mode="isPostMode"
+            :locked="biddingLiveId !== null && p.id !== biddingLiveId && p.status === 'live'"
             v-model:status="p.status"
             @delete="(id) => emit('delete-product', id)"
             @end-ordering="(id) => emit('end-ordering-product', id)"
@@ -211,6 +212,8 @@ interface Props {
   useTable?: boolean
   /** 貼文收單頁：選擇貼文沒有影片畫面，整塊預覽區隱藏。 */
   isPostMode?: boolean
+  /** 當前正在收單的競價商品 id；非該商品的其他卡片會被鎖住。 */
+  biddingLiveId?: number | null
 }
 const props = withDefaults(defineProps<Props>(), {
   sources: () => [],
@@ -218,6 +221,7 @@ const props = withDefaults(defineProps<Props>(), {
   showComments: true,
   useTable: false,
   isPostMode: false,
+  biddingLiveId: null,
 })
 
 const emit = defineEmits<{
@@ -229,13 +233,18 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const activeTab = ref('comments')
+// 預設停在「收單來源」tab；剛挑完來源、希望使用者直接看到加入結果。
+const activeTab = ref('sources')
 
 // 顯示留言關閉時，自動切到「收單來源」tab
 watch(() => props.showComments, (show) => {
   if (!show) activeTab.value = 'sources'
-  else if (activeTab.value !== 'comments') activeTab.value = 'comments'
-}, { immediate: true })
+})
+
+// 新增收單來源後，停留在「收單來源」tab，方便確認加入狀態
+watch(() => props.sources.length, (newLen, oldLen) => {
+  if (newLen > oldLen) activeTab.value = 'sources'
+})
 
 // 是否有商品已開始收單（status === 'live'）— 留言區顯示條件
 const hasLiveProduct = computed(() => props.products.some(p => p.status === 'live'))

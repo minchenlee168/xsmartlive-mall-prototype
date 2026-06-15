@@ -6,6 +6,7 @@ import type { FormSubmitEvent } from '@primevue/forms'
 import { zodResolver } from '@primevue/forms/resolvers/zod'
 
 import FormField from '@/admin/components/ui/FormField.vue'
+import LoaderSpinner from '@/admin/components/portal-ui/LoaderSpinner.vue'
 import { useGlobalToast } from '@/admin/composables/useGlobalToast'
 import { applyCategoryDefaultImageApi } from '@/admin/api/portal-product'
 import { getApiErrorMessage } from '@/admin/utils/api-error'
@@ -297,7 +298,7 @@ async function handleApplyCategoryDefaultImage(categoryId: number): Promise<void
     v-if="loading"
     class="flex justify-center items-center py-8"
   >
-    <ProgressSpinner />
+    <LoaderSpinner />
   </div>
 
   <Form

@@ -1,7 +1,9 @@
 <template>
-  <!-- 直播商品卡：h-266，寬度跟著 grid cell 撐滿（卡片+gap 總寬對齊快速新增） -->
+  <!-- 直播商品卡：h-266，寬度跟著 grid cell 撐滿（卡片+gap 總寬對齊快速新增）；
+       locked=true 時整張卡 pointer-events-none + 透明度降低（其他競價商品收單中時鎖住） -->
   <div
-    class="rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden relative h-[266px] w-full bg-[var(--p-content-background)]"
+    class="rounded-[12px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden relative h-[266px] w-full bg-[var(--p-content-background)] transition-opacity"
+    :class="locked ? 'pointer-events-none opacity-50' : ''"
   >
 
     <!-- 狀態 Tag（左上絕對定位）— 規範：直播收單區 status-badge -->
@@ -49,9 +51,6 @@
                   <i class="pi pi-gift" style="font-size:10px"></i>
                 </span>
                 <span ref="nameRef" v-tooltip.top="nameTruncated ? displayName : ''" class="font-bold text-[16px] text-[var(--p-text-color)] truncate max-w-[120px]">{{ displayName }}</span>
-                <button @click="editingName = true" class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]">
-                  <i class="pi pi-pencil" style="font-size:12px"></i>
-                </button>
               </template>
             </div>
 
@@ -66,9 +65,6 @@
               </template>
               <template v-else>
                 <span class="bg-[#e0f2fe] text-[#0369a1] text-[12.25px] font-bold px-[7px] py-[3.5px] rounded-[12px] leading-none">{{ shortCode }}</span>
-                <button @click="isEditingShort = true" class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]">
-                  <i class="pi pi-pencil" style="font-size:12px"></i>
-                </button>
               </template>
             </div>
 
@@ -96,11 +92,6 @@
               </template>
               <template v-else>
                 <span class="font-bold text-[16px] text-[var(--p-primary-color)]">{{ priceDisplay }}</span>
-                <button v-if="!isGift" @click="onPriceEditClick"
-                  v-tooltip.top="hasMultiSpec ? t('live_order.tooltip.edit_spec_prices') : ''"
-                  class="text-[var(--p-text-muted-color)] hover:text-[var(--p-text-color)]">
-                  <FontAwesomeIcon :icon="['far', 'pen']" class="text-[12px]" />
-                </button>
               </template>
             </div>
 
@@ -182,14 +173,15 @@
             v-tooltip.top="t('live_order.tooltip.winner_list')">
             <i class="pi pi-list text-[var(--p-text-color)]" style="font-size:14px"></i>
           </button>
-          <!-- 編輯：禮物→新增禮物彈窗；一般商品→商品設定彈窗（含下標設定欄位） -->
+          <!-- 設定：禮物→新增禮物彈窗；一般商品→直接開「下標設定」（隱藏編輯商品 tab） -->
           <button @click="openProductEdit"
             class="w-[35px] h-[30px] border border-[var(--p-content-border-color)] rounded-[6px] flex items-center justify-center hover:bg-[var(--p-content-hover-background)]"
-            v-tooltip.top="t('live_order.tooltip.edit_product')">
-            <FontAwesomeIcon :icon="['far', 'pen']" class="text-[var(--p-text-color)] text-[14px]" />
+            v-tooltip.top="t('live_order.tab.order_setting')">
+            <FontAwesomeIcon :icon="['far', 'gear']" class="text-[var(--p-text-color)] text-[14px]" />
           </button>
           <!-- 準備中：刪除（紅色，置於編輯右側）；收單中：暫停 -->
           <button v-if="status === 'live'"
+            @click="status = 'ready'"
             class="w-[35px] h-[30px] border border-[var(--p-content-border-color)] rounded-[6px] flex items-center justify-center hover:bg-[var(--p-content-hover-background)]" v-tooltip.top="t('live_order.tooltip.pause_push')">
             <i class="pi pi-pause text-[var(--p-text-color)]" style="font-size:14px"></i>
           </button>
@@ -229,7 +221,13 @@
     <!-- 得標人 Dialog -->
     <WinnerListDialog v-model:visible="winnerDialogVisible" :product="product" />
     <!-- 商品設定 Dialog（portal-vue 版表單） -->
-    <EditProductDialog v-model:visible="editProductDialogVisible" :product="product" @save="onSettingSave" />
+    <EditProductDialog
+      v-model:visible="editProductDialogVisible"
+      :product="product"
+      initial-tab="order"
+      order-only
+      @save="onSettingSave"
+    />
     <!-- 禮物編輯 Dialog：與「新增禮物」同一彈窗，帶入現有禮物資料 -->
     <GiftFormDialog v-model:visible="giftFormVisible" :product="product" @submit="onGiftEdit" />
     <!-- 規格價格編輯 Dialog（僅多規格商品開啟） -->
@@ -304,10 +302,13 @@ interface Props {
   orderingEnabled?: boolean
   /** 貼文收單模式：不跑動態數字 ticker，按下開始收單直接賣完。 */
   isPostMode?: boolean
+  /** 整張卡片被鎖定（例如：其他競價商品在收單中時，此卡不可操作）。 */
+  locked?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   orderingEnabled: false,
   isPostMode: false,
+  locked: false,
 })
 const isGift = computed(() => props.product?.isGift === true)
 const emit = defineEmits<{

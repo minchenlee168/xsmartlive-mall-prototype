@@ -57,11 +57,17 @@ interface LiveProductLike {
 interface Props {
   visible?: boolean
   product?: LiveProductLike
+  /** 開啟時要落在哪個分頁；商品卡的「設定」按鈕用 'order' 直接打開下標設定。 */
+  initialTab?: 'product' | 'order'
+  /** 是否只顯示下標設定分頁（隱藏「編輯商品」tab）。 */
+  orderOnly?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   product: () => ({}),
+  initialTab: 'product',
+  orderOnly: false,
 })
 
 const emit = defineEmits<{
@@ -72,13 +78,13 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const innerVisible = ref(props.visible)
-// 分頁：'product'(編輯商品) | 'order'(下標設定)；開啟時回到編輯商品
-const activeTab = ref<'product' | 'order'>('product')
+// 分頁：'product'(編輯商品) | 'order'(下標設定)；開啟時切到 prop 指定的初始分頁
+const activeTab = ref<'product' | 'order'>(props.initialTab)
 watch(
   () => props.visible,
   (v) => {
     innerVisible.value = v
-    if (v) activeTab.value = 'product'
+    if (v) activeTab.value = props.initialTab
   },
 )
 
@@ -213,8 +219,9 @@ function onFormCancel(): void {
       </span>
     </template>
 
-    <!-- 分頁切換：編輯商品 / 下標設定（兩個表單皆常駐掛載，僅以 v-show 切顯示） -->
-    <div class="flex gap-1 border-b border-[var(--p-content-border-color)] mb-4">
+    <!-- 分頁切換：編輯商品 / 下標設定（兩個表單皆常駐掛載，僅以 v-show 切顯示）；
+         orderOnly=true 時隱藏整個 tab 列，僅顯示下標設定 -->
+    <div v-if="!orderOnly" class="flex gap-1 border-b border-[var(--p-content-border-color)] mb-4">
       <button
         type="button"
         class="px-4 py-2 text-[14px] font-medium -mb-px border-b-2 transition-colors"

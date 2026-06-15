@@ -281,11 +281,11 @@ const startBtnDisabled = computed(() => !props.orderingEnabled)
               <i class="pi pi-list" style="font-size:13px"></i>
             </button>
             <button
-              v-tooltip.top="t('live_order.tooltip.edit_product')"
+              v-tooltip.top="t('live_order.tab.order_setting')"
               class="w-[28px] h-[28px] rounded-[6px] flex items-center justify-center text-[var(--p-text-color)] hover:bg-[var(--p-content-hover-background)]"
               @click="openEdit(data)"
             >
-              <FontAwesomeIcon :icon="['far', 'pen']" class="text-[13px]" />
+              <FontAwesomeIcon :icon="['far', 'gear']" class="text-[13px]" />
             </button>
             <button
               v-if="data.status === 'live'"
@@ -331,6 +331,8 @@ const startBtnDisabled = computed(() => !props.orderingEnabled)
       v-if="activeProduct"
       v-model:visible="editDialogVisible"
       :product="activeProduct"
+      initial-tab="order"
+      order-only
       @save="onSettingSave"
     />
     <GiftFormDialog

@@ -1,6 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useUiStore } from '../stores/ui'
+import LoaderSpinner from '../admin/components/portal-ui/LoaderSpinner.vue'
+
 const ui = useUiStore()
+const route = useRoute()
+/** 後台 / 抽獎大螢幕路由顯示品牌 logo flip loader；前台維持原本購物車掉貨動畫。 */
+const isAdminLoader = computed(() =>
+  route.path === '/admin'
+  || route.path.startsWith('/admin/')
+  || route.path.startsWith('/lottery/'),
+)
 </script>
 
 <template>
@@ -10,7 +21,13 @@ const ui = useUiStore()
       class="fixed inset-0 z-[9998] flex items-center justify-center"
       style="background: color-mix(in srgb, var(--page-bg) 70%, #fff); backdrop-filter: blur(2px);"
     >
-      <div class="flex flex-col items-center gap-5">
+      <!-- 後台 loader：品牌 logo Y 軸翻轉 -->
+      <div v-if="isAdminLoader" class="flex flex-col items-center gap-8">
+        <LoaderSpinner size="240" />
+        <span class="text-sm font-medium text-[#94a3b8]">載入中</span>
+      </div>
+
+      <div v-else class="flex flex-col items-center gap-5">
         <!-- 彩色幾何圖形掉進購物車 -->
         <div class="relative w-[8rem] h-[8rem]">
           <span class="drop-item shape-circle"   style="--d: 0s;    background: #f43f5e" />

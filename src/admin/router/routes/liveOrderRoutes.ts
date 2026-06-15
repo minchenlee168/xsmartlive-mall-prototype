@@ -9,6 +9,7 @@ import { PERMISSIONS } from '@/admin/constants/permissions'
 export const RouteName = {
   LiveOrder: 'live.order',
   LiveOrderPost: 'live.order.post',
+  LiveOrderPostList: 'live.order.post.list',
   LiveOrderCommunity: 'live.order.community',
   LiveRecords: 'live.records',
 } as const
@@ -30,6 +31,16 @@ export const liveOrderRoutes: RouteRecordRaw[] = [
     component: () => import('@/admin/views/live-order/LiveOrderPage.vue'),
     meta: {
       i18nKey: 'route.live_order_post',
+      permissionKey: PERMISSIONS.LIVE_ORDER_VIEW,
+      layout: 'default',
+    },
+  },
+  {
+    path: 'live-order-post-list',
+    name: RouteName.LiveOrderPostList,
+    component: () => import('@/admin/views/live-order/LiveOrderPage.vue'),
+    meta: {
+      i18nKey: 'route.live_order_post_list',
       permissionKey: PERMISSIONS.LIVE_ORDER_VIEW,
       layout: 'default',
     },

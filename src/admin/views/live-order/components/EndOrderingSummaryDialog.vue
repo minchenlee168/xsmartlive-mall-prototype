@@ -52,6 +52,10 @@ export interface EndOrderingPayload {
   sessionName: string
   products: ProductSummary[]
   totalAmount: number
+  /** 結束收單後是否要把商品上架到「加購區」 */
+  publishToAddOn: boolean
+  /** 加購區下架日期；null 代表不自動下架 */
+  unlistDate: Date | null
 }
 
 interface Props {
@@ -75,9 +79,16 @@ const { t } = useI18n()
 
 /** 已勾選免運的商品 id。Dialog 每次重開時重置。 */
 const freeShippingIds = ref<Set<number>>(new Set())
+/** 上架加購區開關 + 下架日期。Dialog 每次重開時重置。 */
+const publishToAddOn = ref(false)
+const unlistDate = ref<Date | null>(null)
 
 watch(() => props.visible, (v) => {
-  if (v) freeShippingIds.value = new Set()
+  if (v) {
+    freeShippingIds.value = new Set()
+    publishToAddOn.value = false
+    unlistDate.value = null
+  }
 })
 
 /** 把 ProductInput 攤平成 ProductSummary：以 spec 為 sub-row；無 spec 視為單筆。 */
@@ -138,6 +149,8 @@ function onSave(): void {
     sessionName: props.sessionName,
     products: summaries.value,
     totalAmount: grandTotal.value,
+    publishToAddOn: publishToAddOn.value,
+    unlistDate: unlistDate.value,
   })
   close()
 }
@@ -244,6 +257,31 @@ function onSave(): void {
           <span class="text-[11.5px] text-[var(--p-text-muted-color)]">
             ※ {{ t('live_order.summary.free_shipping_note') }}
           </span>
+        </div>
+      </section>
+
+      <!-- 上架加購區設定 -->
+      <section class="rounded-[8px] border border-[var(--p-content-border-color)] overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-4 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="text-[14px] font-medium text-[var(--p-text-color)]">上架加購區</span>
+            <span class="text-[12px] text-[var(--p-text-muted-color)]">結束收單後，把這批商品丟到購物車加購區，提升客單價</span>
+          </div>
+          <ToggleSwitch v-model="publishToAddOn" />
+        </div>
+        <!-- 下架日期：與上架加購區獨立設定，可單獨填寫 -->
+        <div class="flex items-center justify-between gap-3 px-4 py-3 border-t border-[var(--p-content-border-color)]">
+          <div class="flex flex-col gap-1">
+            <span class="text-[14px] font-medium text-[var(--p-text-color)]">下架日期</span>
+            <span class="text-[12px] font-medium" style="color: #ef4444">※ 未填寫將自動延展 7 天</span>
+          </div>
+          <DatePicker
+            v-model="unlistDate"
+            show-icon
+            date-format="yy/mm/dd"
+            placeholder="年 / 月 / 日"
+            class="!w-[200px]"
+          />
         </div>
       </section>
 
