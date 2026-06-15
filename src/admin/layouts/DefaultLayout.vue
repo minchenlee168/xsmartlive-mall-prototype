@@ -18,14 +18,16 @@ onMounted(() => {
 </script>
 
 <template>
+  <!-- 後台主視覺寬 1440px（sidebar 256 + main 1184）；橫向卷軸僅作用於主內容區，
+       sidebar 與 TopBar 不隨之滑動，固定在 viewport 左/上方。 -->
   <div class="flex flex-col w-screen h-screen">
     <TopBar />
 
     <div class="overflow-y-hidden flex flex-1">
       <Sidebar />
 
-      <div class="flex flex-1 flex-col bg-gray-100 dark:bg-gray-800">
-        <div class="overflow-y-auto p-4 flex flex-1 flex-col gap-4">
+      <div class="flex flex-1 flex-col bg-gray-100 dark:bg-gray-800 overflow-auto">
+        <div class="p-4 flex flex-1 flex-col gap-4 min-w-[1184px]">
           <RouterView />
         </div>
       </div>

@@ -51,6 +51,17 @@ export const sidebarMenu: MenuItem[] = [
     ],
   },
   {
+    labelKey: 'nav.order',
+    icon: ['far', 'file-invoice-dollar'],
+    items: [
+      {
+        labelKey: 'nav.order_list',
+        icon: ['far', 'list-radio'],
+        to: RouteName.OrderList,
+      },
+    ],
+  },
+  {
     labelKey: 'nav.marketing',
     icon: ['far', 'chart-mixed'],
     items: [

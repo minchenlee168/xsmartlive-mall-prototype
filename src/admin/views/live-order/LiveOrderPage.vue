@@ -4,7 +4,8 @@
 
   <div class="flex flex-col gap-2 flex-1 min-h-0">
 
-    <!-- ── Toolbar ─────────────────────────────────── -->
+    <!-- ── Toolbar ───────────────────────────────────
+         貼文收單與直播收單共用同一組功能，差別只在隱藏 SessionSelector -->
     <div class="flex items-center gap-2 flex-wrap">
       <SessionSelector
         v-if="!isPostMode"
@@ -15,6 +16,7 @@
         @select="onSessionSelect"
         @create="createDialogVisible = true" />
 
+      <!-- 「選擇商品」SplitButton -->
       <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')" class="inline-flex">
         <!-- SplitButton：主動作開「選擇商品」；下拉選擇「發放禮物」 -->
         <button
@@ -42,52 +44,35 @@
         </button>
       </span>
       <Menu id="add-product-menu" ref="addProductMenuRef" :model="addProductMenuItems" :popup="true" />
-      <template v-if="!isPostMode">
-        <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')" class="inline-flex">
-          <!-- SplitButton：主動作開「批次設定」；下拉選擇「面板設定」 -->
-          <button
-            @click="batchEditDialogVisible = true"
-            :disabled="!currentSession"
-            :class="['border px-[11.5px] py-[8px] rounded-l-[6px] text-[14px] font-medium flex items-center gap-[7px] border-r-0',
-              currentSession
-                ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
-                : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
-          >
-            <FontAwesomeIcon :icon="['far', 'gear']" class="text-[14px]" />{{ t('live_order.button.batch_edit') }}
-          </button>
-          <button
-            ref="batchEditMenuTriggerRef"
-            @click="openBatchEditMenu"
-            :disabled="!currentSession"
-            aria-haspopup="true"
-            aria-controls="batch-edit-menu"
-            :class="['border px-[8px] py-[8px] rounded-r-[6px] text-[14px] font-medium flex items-center',
-              currentSession
-                ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
-                : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
-          >
-            <i class="pi pi-chevron-down" style="font-size:12px"></i>
-          </button>
-        </span>
-        <Menu id="batch-edit-menu" ref="batchEditMenuRef" :model="batchEditMenuItems" :popup="true" />
-      </template>
-
-      <!-- 貼文收單：用一顆「選擇貼文」按鈕取代右側 pick-source 大區塊 -->
-      <span v-if="isPostMode" v-tooltip.bottom="canPickSource ? '' : t('live_order.tooltip.add_product_first')">
+      <span v-tooltip.bottom="currentSession ? '' : t('live_order.tooltip.pick_source_first')" class="inline-flex">
+        <!-- SplitButton：主動作開「批次設定」；下拉選擇「面板設定」 -->
         <button
-          @click="onPickSource"
-          :disabled="!canPickSource"
-          :class="['border px-[11.5px] py-[8px] rounded-[6px] text-[14px] font-medium flex items-center gap-[7px]',
-            canPickSource
+          @click="batchEditDialogVisible = true"
+          :disabled="!currentSession"
+          :class="['border px-[11.5px] py-[8px] rounded-l-[6px] text-[14px] font-medium flex items-center gap-[7px] border-r-0',
+            currentSession
               ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
               : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
         >
-          <FontAwesomeIcon :icon="['far', 'comment']" class="text-[14px]" />
-          {{ t('live_order.button.pick_post') }}
+          <FontAwesomeIcon :icon="['far', 'gear']" class="text-[14px]" />{{ t('live_order.button.batch_edit') }}
+        </button>
+        <button
+          ref="batchEditMenuTriggerRef"
+          @click="openBatchEditMenu"
+          :disabled="!currentSession"
+          aria-haspopup="true"
+          aria-controls="batch-edit-menu"
+          :class="['border px-[8px] py-[8px] rounded-r-[6px] text-[14px] font-medium flex items-center',
+            currentSession
+              ? 'bg-[var(--p-content-background)] border-[var(--p-primary-color)] text-[var(--p-primary-color)] hover:bg-[var(--p-primary-50)]'
+              : 'bg-[var(--p-content-hover-background)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']"
+        >
+          <i class="pi pi-chevron-down" style="font-size:12px"></i>
         </button>
       </span>
+      <Menu id="batch-edit-menu" ref="batchEditMenuRef" :model="batchEditMenuItems" :popup="true" />
 
-      <!-- 商品狀態統計：跟功能鈕同列，緊跟 BatchEdit；一直顯示（即使沒選收單來源 / 沒商品也顯示 0） -->
+      <!-- 商品狀態統計 -->
       <div
         class="flex items-center gap-3 px-3 py-[8px] rounded-[6px] border border-[var(--p-content-border-color)] bg-[var(--p-content-background)]"
       >
@@ -116,7 +101,7 @@
         </span>
       </div>
 
-      <!-- 右側群組：顯示留言 switch + 結束收單（只在 hasAnySource 時顯示） -->
+      <!-- 右側群組：顯示留言 switch + 結束收單 -->
       <div v-if="hasAnySource" class="ml-auto flex items-center gap-3">
         <div class="flex items-center gap-2">
           <i class="pi pi-comments text-[var(--p-text-color)]" style="font-size:14px"></i>
@@ -141,7 +126,7 @@
       <div class="flex flex-1 min-h-0 gap-2">
         <div class="flex-1 flex flex-col self-stretch min-w-0 gap-2">
           <!-- 快速新增（與右側 panel 同高度起點） -->
-          <QuickAddProductForm v-if="currentSession && !isPostMode" ref="quickAddRef" @submit="onQuickAddProducts" />
+          <QuickAddProductForm v-if="currentSession" ref="quickAddRef" @submit="onQuickAddProducts" />
 
           <div v-if="selectedProducts.length === 0" class="flex flex-col items-center justify-center gap-3 pt-12">
             <i class="pi pi-inbox text-5xl text-[var(--p-text-muted-color)]"></i>
@@ -149,20 +134,13 @@
             <p class="text-[14px] leading-normal text-[var(--p-text-muted-color)]">{{ t('live_order.empty.no_product_hint') }}</p>
           </div>
           <div v-else class="flex-1 overflow-y-auto">
-            <!-- 貼文收單走 table；其他模式維持商品卡 grid -->
-            <LiveProductTable
-              v-if="isPostMode"
-              :products="selectedProducts"
-              :sources="sources"
-              :ordering-enabled="hasAnySource"
-              @delete="onDeleteProduct"
-            />
-            <div v-else class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
+            <div class="grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(232px, 1fr))">
               <LiveProductCard
                 v-for="p in selectedProducts"
                 :key="p.id"
                 :product="p"
                 :ordering-enabled="hasAnySource"
+                :is-post-mode="isPostMode"
                 v-model:status="p.status"
                 @delete="onDeleteProduct"
                 @end-ordering="onCardEndOrdering"
@@ -171,8 +149,8 @@
           </div>
         </div>
 
-        <!-- 空狀態右側選擇收單來源（頂部對齊 QuickAdd）— 貼文收單模式不顯示，改用 toolbar 的「選擇貼文」按鈕 -->
-        <div v-if="!isPostMode" class="w-[340px] shrink-0 flex flex-col items-center gap-3 self-stretch pt-12">
+        <!-- 空狀態右側選擇收單來源（頂部對齊 QuickAdd） -->
+        <div class="w-[340px] shrink-0 flex flex-col items-center gap-3 self-stretch pt-12">
           <i class="pi pi-inbox text-5xl text-[var(--p-text-muted-color)]"></i>
           <p class="font-bold text-[18px] leading-normal text-[var(--p-text-color)]">{{ t('live_order.empty.no_order_content') }}</p>
           <p class="text-[14px] leading-normal text-[var(--p-text-muted-color)]">{{ pickSourceHelperText }}</p>
@@ -182,7 +160,7 @@
                 canPickSource
                   ? 'bg-[var(--p-primary-color)] border-[var(--p-primary-color)] text-white hover:bg-[var(--p-primary-hover-color)]'
                   : 'bg-[var(--p-content-border-color)] border-[var(--p-content-border-color)] text-[var(--p-text-muted-color)] cursor-not-allowed']">
-              {{ t('live_order.button.pick_source') }}
+              {{ isPostMode ? t('live_order.button.pick_post') : t('live_order.button.pick_source') }}
             </button>
           </span>
         </div>
@@ -194,13 +172,14 @@
         :sources="sources"
         :products="selectedProducts"
         :show-comments="showComments"
-        :use-table="isPostMode"
+        :use-table="false"
+        :is-post-mode="isPostMode"
         @pick-source="onPickSource"
         @remove-source="onRemoveSource"
         @delete-product="onDeleteProduct"
         @end-ordering-product="onCardEndOrdering">
         <template #products-header>
-          <QuickAddProductForm v-if="currentSession && !isPostMode" ref="quickAddRef" @submit="onQuickAddProducts" />
+          <QuickAddProductForm v-if="currentSession" ref="quickAddRef" @submit="onQuickAddProducts" />
         </template>
       </OrderModeView>
     </template>
@@ -247,7 +226,6 @@ import BatchEditDialog from './components/BatchEditDialog.vue'
 import PanelSettingsDialog, { type PanelSettings } from './components/PanelSettingsDialog.vue'
 import AddBundleDialog, { type BundlePickPayload } from './components/AddBundleDialog.vue'
 import EndOrderingSummaryDialog, { type EndOrderingPayload } from './components/EndOrderingSummaryDialog.vue'
-import LiveProductTable from './components/LiveProductTable.vue'
 import QuickAddProductForm from './components/QuickAddProductForm.vue'
 import { addLiveOrderRecord } from './utils/liveOrderRecords'
 import GiftFormDialog, { type GiftSubmitPayload } from './components/GiftFormDialog.vue'
@@ -472,23 +450,21 @@ const currentSession = ref<LiveSession | null>(null)
  * 貼文收單沒有場次選擇器；自動建立或挑一個「貼文」收單容器。
  * 不沿用直播首播的場次名（避免「春季首播」這類直播文案出現在貼文收單）。
  */
+/**
+ * 貼文收單頁沒有場次選擇器，需要有一個內部容器承載商品 / 來源 / 留言。
+ * 自動建立一個 name 為空的 LiveSession，但不 push 進 sessions 列表
+ * （避免 SessionSelector 與結束收單彙總彈窗顯示「貼文收單」字眼）。
+ */
 watch(isPostMode, (post) => {
   if (!post) return
-  // 已經有貼文用容器就保留；否則新建一筆，名稱用 post 主題
-  const existing = sessions.value.find((s) => s.name.startsWith(t('live_order.post.default_name')))
-  if (existing) {
-    currentSession.value = existing
-    return
-  }
-  const newPostSession: LiveSession = {
-    id: Date.now(),
-    name: t('live_order.post.default_name'),
+  if (currentSession.value && currentSession.value.id < 0) return
+  currentSession.value = {
+    id: -1,
+    name: '',
     date: new Date().toISOString().slice(0, 10).replace(/-/g, '/'),
     products: [],
     sources: [],
   }
-  sessions.value.unshift(newPostSession)
-  currentSession.value = newPostSession
 }, { immediate: true })
 
 function onSessionSelect(s: LiveSession): void { currentSession.value = s }
@@ -696,7 +672,6 @@ function onPickSource(): void {
 
 /** Map a confirmed source type/extras to a LiveSource entry on the current session. */
 function onSourceConfirmed(type: string, extras: SourceConfirmExtras = {}): void {
-  if (!currentSession.value) return
   const labelKeyMap: Record<string, string> = {
     fb: 'live_order.source_type_label.fb',
     ig: 'live_order.source_type_label.ig',
@@ -708,6 +683,7 @@ function onSourceConfirmed(type: string, extras: SourceConfirmExtras = {}): void
   const labelKey = labelKeyMap[type]
   if (!labelKey) return
   const label = t(labelKey)
+  if (!currentSession.value) return
   currentSession.value.sources.push({
     id: Date.now() + Math.random(),
     type,

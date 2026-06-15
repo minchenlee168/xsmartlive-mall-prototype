@@ -302,9 +302,12 @@ interface Props {
   product: LiveProduct
   /** 是否啟用收單模擬 ticker（有收單來源時為 true）。 */
   orderingEnabled?: boolean
+  /** 貼文收單模式：不跑動態數字 ticker，按下開始收單直接賣完。 */
+  isPostMode?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   orderingEnabled: false,
+  isPostMode: false,
 })
 const isGift = computed(() => props.product?.isGift === true)
 const emit = defineEmits<{
@@ -598,9 +601,29 @@ function stopTicker(): void {
   if (saleTimer) { clearTimeout(saleTimer); saleTimer = null }
 }
 
+/**
+ * 貼文收單模式：按下開始收單 → 不跑 ticker，直接把商品本體與每個規格的 sold
+ * 設成 stock（賣完）；已售/小計/規格庫存數字一次到位。
+ */
+function settlePostModeSoldOut(): void {
+  const stock = props.product.stock ?? 0
+  ;(props.product as Record<string, unknown>).sold = stock
+  const specs = (props.product.selectedSpecs?.length
+    ? props.product.selectedSpecs
+    : props.product.specs) ?? []
+  specs.forEach((s) => {
+    s.sold = s.stock ?? 0
+  })
+}
+
 watch(
   [() => status.value, () => props.orderingEnabled],
   () => {
+    if (props.isPostMode) {
+      stopTicker()
+      if (status.value === 'live' && props.orderingEnabled) settlePostModeSoldOut()
+      return
+    }
     if (shouldTick()) scheduleNextTick()
     else stopTicker()
   },

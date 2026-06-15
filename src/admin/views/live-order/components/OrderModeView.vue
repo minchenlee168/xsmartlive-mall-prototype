@@ -27,6 +27,7 @@
             :key="p.id"
             :product="p"
             :ordering-enabled="sources.length > 0"
+            :is-post-mode="isPostMode"
             v-model:status="p.status"
             @delete="(id) => emit('delete-product', id)"
             @end-ordering="(id) => emit('end-ordering-product', id)"
@@ -40,7 +41,7 @@
                      showComments ? 'w-[340px]' : 'w-[240px]']">
 
       <!-- 預覽區（只在 FB 系列來源時顯示，IG / TikTok 無影片畫面隱藏；貼文收單一律不顯示） -->
-      <div v-if="sources.length > 0 && hasPreview && !useTable" class="relative shrink-0">
+      <div v-if="sources.length > 0 && hasPreview && !useTable && !isPostMode" class="relative shrink-0">
         <div class="bg-[#0f172a] rounded-[6px] overflow-hidden relative flex items-center justify-center" style="height:125px">
           <div class="bg-[var(--p-content-background)] rounded-[6px] overflow-hidden shadow-md flex flex-col" style="width:70px; height:113px">
             <div class="flex-1 bg-gradient-to-br from-[#fef3c7] via-[#fed7aa] to-[#fda4af] flex items-center justify-center">
@@ -208,12 +209,15 @@ interface Props {
   showComments?: boolean
   /** 貼文收單模式：把商品卡 grid 換成 table。 */
   useTable?: boolean
+  /** 貼文收單頁：選擇貼文沒有影片畫面，整塊預覽區隱藏。 */
+  isPostMode?: boolean
 }
 const props = withDefaults(defineProps<Props>(), {
   sources: () => [],
   products: () => [],
   showComments: true,
   useTable: false,
+  isPostMode: false,
 })
 
 const emit = defineEmits<{
